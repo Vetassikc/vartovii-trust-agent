@@ -37,3 +37,4 @@ htmlcov/
 # Distribution
 *.egg
 *.whl
+*.egg-info/
