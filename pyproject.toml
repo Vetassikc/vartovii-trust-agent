@@ -1,0 +1,30 @@
+[project]
+name = "vartovii-trust-agent"
+version = "1.0.0"
+description = "Autonomous multi-agent trust intelligence system powered by Google ADK and Gemini"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Vitalii Radionov"},
+]
+keywords = ["ai-agent", "google-adk", "gemini", "trust-intelligence", "multi-agent"]
+
+dependencies = [
+    "google-adk>=1.27.3",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
