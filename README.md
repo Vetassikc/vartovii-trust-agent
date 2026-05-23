@@ -122,7 +122,7 @@ All models are environment-overridable. The 3-tier fallback ensures **zero user-
 
 ```bash
 # Clone and setup
-git clone https://github.com/YOUR_USERNAME/vartovii-trust-agent.git
+git clone https://github.com/Vetassikc/vartovii-trust-agent.git
 cd vartovii-trust-agent
 
 # Create virtual environment
