@@ -9,16 +9,63 @@ All tools for the Crypto Intelligence sub-agent:
 - get_token_holders: Top holders of an ERC20 token
 - get_contract_info: Smart contract verification info
 
-In production, these query PostgreSQL (6700+ crypto projects),
-CoinGecko (live market data), and Etherscan (on-chain forensics).
-For the submission demo, they use mock data providers.
+Data source priority:
+  1. MongoDB Atlas (production / hackathon demo)
+  2. In-memory mock data (fallback when MongoDB is unavailable)
 """
 
 import logging
+from typing import Optional
 
+from .db import get_collection, is_mongodb_available
 from .mock_data import CRYPTO_PROJECTS, WALLETS
 
 logger = logging.getLogger(__name__)
+
+
+def _get_crypto_from_db(query: str) -> Optional[list]:
+    """Try to find crypto projects in MongoDB. Returns None if unavailable."""
+    if not is_mongodb_available():
+        return None
+
+    col = get_collection("crypto_projects")
+    if col is None:
+        return None
+
+    try:
+        query_lower = query.strip().lower()
+        cursor = col.find(
+            {
+                "$or": [
+                    {"slug": {"$regex": query_lower, "$options": "i"}},
+                    {"name": {"$regex": query_lower, "$options": "i"}},
+                    {"symbol": {"$regex": f"^{query_lower}$", "$options": "i"}},
+                ]
+            },
+            {"_id": 0},
+        )
+        results = list(cursor)
+        return results if results else None
+    except Exception as e:
+        logger.warning("MongoDB crypto search failed for '%s': %s", query, e)
+        return None
+
+
+def _get_wallet_from_db(address: str) -> Optional[dict]:
+    """Try to find a wallet in MongoDB."""
+    if not is_mongodb_available():
+        return None
+
+    col = get_collection("wallets")
+    if col is None:
+        return None
+
+    try:
+        result = col.find_one({"address": {"$regex": f"^{address}$", "$options": "i"}}, {"_id": 0})
+        return result
+    except Exception as e:
+        logger.warning("MongoDB wallet query failed for '%s': %s", address, e)
+        return None
 
 
 def search_crypto_projects(query: str) -> dict:
@@ -31,6 +78,30 @@ def search_crypto_projects(query: str) -> dict:
     Returns:
         Matching projects with price, market cap, trust score
     """
+    # Try MongoDB first
+    db_results = _get_crypto_from_db(query)
+    if db_results:
+        results = [
+            {
+                "slug": p["slug"],
+                "name": p["name"],
+                "symbol": p["symbol"],
+                "price_usd": p.get("price_usd"),
+                "market_cap": p.get("market_cap"),
+                "trust_score": p["trust_score"],
+                "risk_level": p["risk_level"],
+            }
+            for p in db_results
+        ]
+        return {
+            "found": True,
+            "count": len(results),
+            "results": results,
+            "message": f"Found {len(results)} projects matching '{query}'.",
+            "source": "mongodb",
+        }
+
+    # Fallback to mock data
     query_lower = query.strip().lower()
     results = []
 
@@ -64,6 +135,7 @@ def search_crypto_projects(query: str) -> dict:
         "count": len(results),
         "results": results,
         "message": f"Found {len(results)} projects matching '{query}'.",
+        "source": "mock",
     }
 
 
@@ -78,6 +150,25 @@ def get_crypto_trust_score(slug: str) -> dict:
         Comprehensive project data with trust score breakdown, funding info,
         dev activity, treasury, and security scores
     """
+    # Try MongoDB first
+    if is_mongodb_available():
+        col = get_collection("crypto_projects")
+        if col is not None:
+            try:
+                project = col.find_one(
+                    {"slug": slug.strip().lower()}, {"_id": 0}
+                )
+                if project:
+                    return {
+                        "found": True,
+                        **project,
+                        "ai_hint": "Use these REAL numbers in your response. Don't say 'if' — state the actual data.",
+                        "source": "mongodb",
+                    }
+            except Exception as e:
+                logger.warning("MongoDB get_crypto_trust_score failed: %s", e)
+
+    # Fallback to mock data
     project = CRYPTO_PROJECTS.get(slug.strip().lower())
 
     if not project:
@@ -87,6 +178,7 @@ def get_crypto_trust_score(slug: str) -> dict:
         "found": True,
         **project,
         "ai_hint": "Use these REAL numbers in your response. Don't say 'if' — state the actual data.",
+        "source": "mock",
     }
 
 
@@ -106,23 +198,44 @@ def check_wallet(address: str) -> dict:
     if not address.startswith("0x"):
         return {"error": "Invalid address format. Must start with 0x"}
 
-    wallet = WALLETS.get(address.lower())
+    # Try MongoDB first
+    wallet = _get_wallet_from_db(address)
     if wallet:
         return {
-            "address": wallet["address"],
-            "eth_balance": wallet["eth_balance"],
-            "usd_value": wallet["usd_value"],
+            "address": wallet.get("address", address),
+            "eth_balance": wallet.get("eth_balance", 0.0),
+            "usd_value": wallet.get("usd_value", 0.0),
             "found": True,
-            "chain": "ethereum",
+            "chain": wallet.get("chain", "ethereum"),
             "label": wallet.get("label"),
+            "risk_flags": wallet.get("risk_flags", []),
             "etherscan_link": f"https://etherscan.io/address/{address}",
             "message": (
-                f"Wallet {address[:10]}... holds {wallet['eth_balance']:.4f} ETH "
-                f"≈ ${wallet['usd_value']:,.2f} USD"
+                f"Wallet {address[:10]}... holds {wallet.get('eth_balance', 0):.4f} ETH "
+                f"≈ ${wallet.get('usd_value', 0):,.2f} USD"
             ),
+            "source": "mongodb",
         }
 
-    # Demo: return a generic response for unknown wallets
+    # Fallback to mock data
+    mock_wallet = WALLETS.get(address.lower())
+    if mock_wallet:
+        return {
+            "address": mock_wallet["address"],
+            "eth_balance": mock_wallet["eth_balance"],
+            "usd_value": mock_wallet["usd_value"],
+            "found": True,
+            "chain": "ethereum",
+            "label": mock_wallet.get("label"),
+            "etherscan_link": f"https://etherscan.io/address/{address}",
+            "message": (
+                f"Wallet {address[:10]}... holds {mock_wallet['eth_balance']:.4f} ETH "
+                f"≈ ${mock_wallet['usd_value']:,.2f} USD"
+            ),
+            "source": "mock",
+        }
+
+    # Generic response for unknown wallets
     return {
         "address": address,
         "eth_balance": 0.0,

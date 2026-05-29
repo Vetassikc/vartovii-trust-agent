@@ -9,16 +9,67 @@ All tools for the Corporate Intelligence sub-agent:
 - get_company_reviews: Employee review samples
 - get_vacancy_intelligence: Ghost jobs, time-to-fill, hiring velocity
 
-In production, these query PostgreSQL with 500+ companies and 100K+ reviews.
-For the submission demo, they use mock data providers.
+Data source priority:
+  1. MongoDB Atlas (production / hackathon demo)
+  2. In-memory mock data (fallback when MongoDB is unavailable)
 """
 
 import logging
 from typing import Optional
 
+from .db import get_collection, is_mongodb_available
 from .mock_data import COMPANIES, REVIEWS, VACANCIES
 
 logger = logging.getLogger(__name__)
+
+
+def _get_company_from_db(company_name: str) -> Optional[dict]:
+    """Try to find a company in MongoDB. Returns None if unavailable."""
+    if not is_mongodb_available():
+        return None
+
+    col = get_collection("companies")
+    if col is None:
+        return None
+
+    try:
+        # First try exact slug match
+        key = company_name.strip().lower().split()[0] if company_name else ""
+        result = col.find_one(
+            {"profile_slug": {"$regex": f"^{key}", "$options": "i"}},
+            {"_id": 0},
+        )
+        if result:
+            return result
+
+        # Fallback to text search on company_name
+        result = col.find_one(
+            {"company_name": {"$regex": company_name.strip(), "$options": "i"}},
+            {"_id": 0},
+        )
+        return result
+    except Exception as e:
+        logger.warning("MongoDB query failed for company '%s': %s", company_name, e)
+        return None
+
+
+def _get_company_from_mock(company_name: str) -> Optional[dict]:
+    """Get company from in-memory mock data."""
+    key = company_name.strip().lower().split()[0] if company_name else ""
+    return COMPANIES.get(key)
+
+
+def _get_company(company_name: str) -> Optional[dict]:
+    """Get company from MongoDB, falling back to mock data."""
+    result = _get_company_from_db(company_name)
+    if result is not None:
+        logger.debug("Company '%s' found in MongoDB", company_name)
+        return result
+
+    result = _get_company_from_mock(company_name)
+    if result is not None:
+        logger.debug("Company '%s' found in mock data (MongoDB unavailable)", company_name)
+    return result
 
 
 def search_company(company_name: str, country: Optional[str] = None) -> dict:
@@ -32,8 +83,7 @@ def search_company(company_name: str, country: Optional[str] = None) -> dict:
     Returns:
         Company info with trust_score, avg_rating, review_count, sentiment
     """
-    key = company_name.strip().lower().split()[0] if company_name else ""
-    company = COMPANIES.get(key)
+    company = _get_company(company_name)
 
     if not company:
         return {
@@ -57,8 +107,7 @@ def get_trust_score(company_name: str) -> dict:
     Returns:
         Trust score with risk level and breakdown by categories
     """
-    key = company_name.strip().lower().split()[0] if company_name else ""
-    company = COMPANIES.get(key)
+    company = _get_company(company_name)
 
     if not company:
         return {"error": f"Company '{company_name}' not found in database."}
@@ -87,6 +136,31 @@ def list_companies(
     Returns:
         List of companies with trust scores and ratings
     """
+    effective_limit = min(limit, 50)
+    sort_key = sort_by if sort_by in ("trust_score", "review_count", "avg_rating") else "trust_score"
+
+    # Try MongoDB first
+    if is_mongodb_available():
+        col = get_collection("companies")
+        if col is not None:
+            try:
+                query = {}
+                if country:
+                    query["country"] = country.upper()
+
+                cursor = col.find(
+                    query,
+                    {"_id": 0, "company_name": 1, "trust_score": 1, "risk_level": 1,
+                     "avg_rating": 1, "review_count": 1},
+                ).sort(sort_key, -1).limit(effective_limit)
+
+                results = list(cursor)
+                if results:
+                    return {"companies": results, "count": len(results), "source": "mongodb"}
+            except Exception as e:
+                logger.warning("MongoDB list_companies failed: %s", e)
+
+    # Fallback to mock data
     results = [
         {
             "company_name": c["company_name"],
@@ -98,11 +172,10 @@ def list_companies(
         for c in COMPANIES.values()
     ]
 
-    sort_key = sort_by if sort_by in ("trust_score", "review_count", "avg_rating") else "trust_score"
     results.sort(key=lambda x: x[sort_key], reverse=True)
-    results = results[: min(limit, 50)]
+    results = results[:effective_limit]
 
-    return {"companies": results, "count": len(results)}
+    return {"companies": results, "count": len(results), "source": "mock"}
 
 
 def compare_companies(company1: str, company2: str) -> dict:
@@ -170,16 +243,43 @@ def get_company_reviews(
     Returns:
         Sample reviews with sentiment and source info
     """
+    effective_limit = min(limit, 10)
     key = company_name.strip().lower().split()[0] if company_name else ""
-    reviews = REVIEWS.get(key, [])
 
+    # Try MongoDB first
+    if is_mongodb_available():
+        col = get_collection("reviews")
+        if col is not None:
+            try:
+                query = {"company_slug": {"$regex": f"^{key}", "$options": "i"}}
+                if sentiment_filter != "all":
+                    query["sentiment"] = sentiment_filter.upper()
+
+                cursor = col.find(
+                    query, {"_id": 0}
+                ).sort("date", -1).limit(effective_limit)
+
+                reviews = list(cursor)
+                if reviews:
+                    return {
+                        "company_name": company_name,
+                        "reviews": reviews,
+                        "count": len(reviews),
+                        "source": "mongodb",
+                    }
+            except Exception as e:
+                logger.warning("MongoDB get_company_reviews failed: %s", e)
+
+    # Fallback to mock data
+    reviews = REVIEWS.get(key, [])
     if sentiment_filter != "all":
         reviews = [r for r in reviews if r["sentiment"].lower() == sentiment_filter.lower()]
 
     return {
         "company_name": company_name,
-        "reviews": reviews[: min(limit, 10)],
-        "count": len(reviews),
+        "reviews": reviews[:effective_limit],
+        "count": len(reviews[:effective_limit]),
+        "source": "mock",
     }
 
 
@@ -194,9 +294,29 @@ def get_vacancy_intelligence(company_name: str) -> dict:
         Vacancy metrics: ghost_jobs, avg_time_to_fill, hiring_velocity, total_vacancies
     """
     key = company_name.strip().lower().split()[0] if company_name else ""
-    data = VACANCIES.get(key)
 
+    # Try MongoDB first
+    if is_mongodb_available():
+        col = get_collection("companies")
+        if col is not None:
+            try:
+                result = col.find_one(
+                    {"profile_slug": {"$regex": f"^{key}", "$options": "i"}},
+                    {"_id": 0, "vacancy_data": 1, "company_name": 1},
+                )
+                if result and result.get("vacancy_data"):
+                    return {
+                        "found": True,
+                        "company_name": result.get("company_name", company_name),
+                        **result["vacancy_data"],
+                        "source": "mongodb",
+                    }
+            except Exception as e:
+                logger.warning("MongoDB get_vacancy_intelligence failed: %s", e)
+
+    # Fallback to mock data
+    data = VACANCIES.get(key)
     if not data:
         return {"found": False, "message": f"No vacancy data for '{company_name}'"}
 
-    return {"found": True, "company_name": company_name, **data}
+    return {"found": True, "company_name": company_name, **data, "source": "mock"}

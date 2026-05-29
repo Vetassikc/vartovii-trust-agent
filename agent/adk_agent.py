@@ -5,10 +5,10 @@ Root Orchestrator delegates to specialized sub-agents:
   • Corporate Agent — employer analytics (Trust Score, reviews, comparisons)
   • Crypto Agent — crypto intelligence + on-chain forensics
   • OSINT Agent — real-time web research via Google Search Grounding
+  • Memory Agent — investigation persistence + audit trail (MongoDB)
 
-This is the core agent definition extracted from the production Vartovii platform
-(sentryanalytic.com). In production, this system has been live since March 25, 2026,
-deployed on Google Cloud Run with ADK_ENABLED=true.
+MongoDB MCP Server integration provides direct database access to all agents,
+enabling real-time data queries, investigation persistence, and audit logging.
 
 Usage:
     from agent.adk_agent import root_agent
@@ -22,10 +22,17 @@ Usage:
 """
 
 import logging
+import os
 
 from google.adk.agents import LlmAgent
 from google.adk.tools import FunctionTool
 from google.adk.tools.google_search_tool import GoogleSearchTool
+
+try:
+    from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StdioConnectionParams
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
 
 from .config import AIConfig
 from .prompts.adk import (
@@ -35,7 +42,7 @@ from .prompts.adk import (
     OSINT_AGENT_INSTRUCTION,
 )
 
-# Import tool functions
+# Import tool functions — Corporate
 from .tools.corporate_tools import (
     compare_companies,
     get_company_reviews,
@@ -44,6 +51,7 @@ from .tools.corporate_tools import (
     list_companies,
     search_company,
 )
+# Import tool functions — Crypto
 from .tools.crypto_tools import (
     check_wallet,
     get_contract_info,
@@ -52,8 +60,79 @@ from .tools.crypto_tools import (
     get_transaction_history,
     search_crypto_projects,
 )
+# Import tool functions — Investigation & Audit
+from .tools.investigation_tools import (
+    get_audit_trail,
+    get_investigation_history,
+    log_audit_event,
+    save_investigation,
+)
 
 logger = logging.getLogger(__name__)
+
+
+# ============ MongoDB MCP Toolset ============
+
+def _build_mcp_toolset():
+    """
+    Initialize MongoDB MCP Server connection via StdioConnectionParams.
+
+    The official mongodb-mcp-server (npm) exposes tools for:
+    - find, aggregate, insertOne, updateOne, deleteOne
+    - listDatabases, listCollections, createIndex
+    - explain (query plans)
+
+    This gives agents direct database access beyond our custom tools.
+    """
+    if not MCP_AVAILABLE:
+        logger.warning("⚠️ McpToolset not available — MCP integration disabled")
+        return None
+
+    conn_string = AIConfig.MONGODB_CONNECTION_STRING
+    if not conn_string or conn_string == "your_mongodb_connection_string_here":
+        logger.info("ℹ️ MongoDB MCP Server skipped — no connection string configured")
+        return None
+
+    try:
+        toolset = McpToolset(
+            connection_params=StdioConnectionParams(
+                command="npx",
+                args=["-y", "mongodb-mcp-server"],
+                env={
+                    "MONGODB_CONNECTION_STRING": conn_string,
+                    "PATH": os.environ.get("PATH", ""),
+                },
+            ),
+        )
+        logger.info("🔌 MongoDB MCP Server toolset initialized")
+        return toolset
+    except Exception as e:
+        logger.warning("⚠️ MongoDB MCP Server initialization failed: %s", e)
+        return None
+
+
+# Build MCP toolset (may be None if not configured)
+mongo_mcp_toolset = _build_mcp_toolset()
+
+
+# ============ Memory Agent Instruction ============
+
+MEMORY_AGENT_INSTRUCTION = """You are the Memory & Audit agent for Vartovii Trust Intelligence.
+
+Your responsibilities:
+1. **Save Investigations**: After any trust assessment is complete, save the results
+   using save_investigation() so they can be recalled later.
+2. **Recall History**: When asked about previous investigations, use
+   get_investigation_history() to find past results.
+3. **Audit Trail**: Log significant actions using log_audit_event() for
+   compliance and observability.
+4. **Audit Queries**: When asked about agent activity, use get_audit_trail()
+   to retrieve recent actions.
+
+Always save investigations with accurate entity_name, entity_type ("company" or "crypto"),
+trust_score, risk_level, and a clear summary of findings.
+"""
+
 
 # ============ Sub-Agent: Corporate Intelligence ============
 
@@ -114,18 +193,46 @@ osint_agent = LlmAgent(
     ],
 )
 
+# ============ Sub-Agent: Memory & Audit ============
+
+memory_agent = LlmAgent(
+    name="memory_agent",
+    model=AIConfig.ADK_MODEL,
+    description=(
+        "Manages investigation persistence and audit trail. Use this agent to: "
+        "save investigation results after analysis, recall past investigations, "
+        "log significant actions, and query the audit trail."
+    ),
+    instruction=AIConfig.get_adk_instruction("memory", MEMORY_AGENT_INSTRUCTION),
+    tools=[
+        FunctionTool(save_investigation),
+        FunctionTool(get_investigation_history),
+        FunctionTool(log_audit_event),
+        FunctionTool(get_audit_trail),
+    ],
+)
+
 # ============ Root Orchestrator ============
+
+# Build orchestrator tools list (include MCP if available)
+orchestrator_tools = []
+if mongo_mcp_toolset is not None:
+    orchestrator_tools.append(mongo_mcp_toolset)
 
 root_agent = LlmAgent(
     name="vartovii_orchestrator",
     model=AIConfig.ADK_MODEL,
     description="Vartovii AI — Trust Intelligence Platform assistant",
     instruction=AIConfig.get_adk_instruction("orchestrator", ORCHESTRATOR_AGENT_INSTRUCTION),
-    sub_agents=[corporate_agent, crypto_agent, osint_agent],
-    tools=[],  # Orchestrator delegates only — no direct tools
+    sub_agents=[corporate_agent, crypto_agent, osint_agent, memory_agent],
+    tools=orchestrator_tools,
 )
 
+# Log initialization summary
+tool_count = sum([6, 6, 1, 4])  # corporate + crypto + osint + memory
+mcp_status = "MongoDB MCP ✅" if mongo_mcp_toolset else "MongoDB MCP ❌ (no connection string)"
 logger.info(
-    "🤖 Vartovii ADK Agent initialized: root + 3 sub-agents "
-    "(corporate: 6 tools, crypto: 6 tools, osint: Google Search)"
+    "🤖 Vartovii ADK Agent initialized: root + 4 sub-agents "
+    "(corporate: 6, crypto: 6, osint: 1, memory: 4 tools) | %s",
+    mcp_status,
 )

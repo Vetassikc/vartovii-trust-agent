@@ -13,6 +13,7 @@ from agent.adk_agent import (
     corporate_agent,
     crypto_agent,
     osint_agent,
+    memory_agent,
 )
 
 
@@ -24,13 +25,15 @@ from agent.adk_agent import (
 class TestAgentArchitecture:
     """Verify the multi-agent topology is correct."""
 
-    def test_root_agent_has_three_sub_agents(self):
-        """Root orchestrator must delegate to exactly 3 sub-agents."""
-        assert len(root_agent.sub_agents) == 3
+    def test_root_agent_has_four_sub_agents(self):
+        """Root orchestrator must delegate to exactly 4 sub-agents."""
+        assert len(root_agent.sub_agents) == 4
 
-    def test_root_agent_has_no_direct_tools(self):
-        """Orchestrator should not have tools — it only delegates."""
-        assert root_agent.tools == []
+    def test_root_agent_delegates_only(self):
+        """Orchestrator tools should only be MCP toolset or empty."""
+        # Without MongoDB configured, orchestrator has no direct tools
+        # With MongoDB, it would have the MCP toolset
+        assert len(root_agent.tools) <= 1
 
     def test_root_agent_name(self):
         assert root_agent.name == "vartovii_orchestrator"
@@ -57,9 +60,9 @@ class TestAgentArchitecture:
         assert len(osint_agent.tools) == 1
 
     def test_sub_agents_are_in_root(self):
-        """All three sub-agents must be registered with root."""
+        """All four sub-agents must be registered with root."""
         agent_names = {a.name for a in root_agent.sub_agents}
-        assert agent_names == {"corporate_agent", "crypto_agent", "osint_agent"}
+        assert agent_names == {"corporate_agent", "crypto_agent", "osint_agent", "memory_agent"}
 
 
 # ============================================
@@ -77,7 +80,7 @@ class TestModelConfiguration:
         assert AIConfig._MODEL_DEFAULTS["stable"]["report"] == "gemini-2.5-pro"
 
     def test_preview_profile_uses_gemini_3_flash(self):
-        assert AIConfig._MODEL_DEFAULTS["preview"]["chat"] == "gemini-3-flash-preview"
+        assert AIConfig._MODEL_DEFAULTS["preview"]["chat"] == "gemini-3-flash"
 
     def test_model_chain_has_three_tiers(self):
         """3-tier fallback: primary → fallback → ultimate (gemini-2.0-flash)."""
@@ -122,8 +125,8 @@ class TestADKInstructionOverride:
         assert result == "FALLBACK"
 
     def test_env_keys_cover_all_agents(self):
-        """All 4 agent types must have env override keys."""
-        expected = {"corporate", "crypto", "osint", "orchestrator"}
+        """All 5 agent types must have env override keys."""
+        expected = {"corporate", "crypto", "osint", "memory", "orchestrator"}
         assert set(AIConfig.ADK_INSTRUCTION_ENV_KEYS.keys()) == expected
 
 

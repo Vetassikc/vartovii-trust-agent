@@ -1,18 +1,23 @@
 [project]
 name = "vartovii-trust-agent"
-version = "1.0.0"
-description = "Autonomous multi-agent trust intelligence system powered by Google ADK and Gemini"
+version = "2.0.0"
+description = "Autonomous multi-agent trust intelligence system powered by Google ADK, Gemini 3, and MongoDB Atlas"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
     {name = "Vitalii Radionov"},
 ]
-keywords = ["ai-agent", "google-adk", "gemini", "trust-intelligence", "multi-agent"]
+keywords = [
+    "ai-agent", "google-adk", "gemini", "trust-intelligence",
+    "multi-agent", "mongodb", "mcp", "fraud-detection",
+]
 
 dependencies = [
     "google-adk>=1.27.3",
     "python-dotenv>=1.0.0",
+    "pymongo[srv]>=4.7.0",
+    "mcp>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -20,13 +25,17 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
 ]
+api = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+]
 
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["agent*", "services*", "demo*"]
+include = ["agent*", "services*", "demo*", "api*", "scripts*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

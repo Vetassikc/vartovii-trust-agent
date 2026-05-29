@@ -1,1 +1,1 @@
-"""Agent tools package."""
+"""Vartovii Trust Agent — Tool Modules."""

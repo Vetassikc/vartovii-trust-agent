@@ -22,9 +22,9 @@ class AIConfig:
     # ============================================
     # Model Profiles: stable (GA) vs preview (3.x)
     # ============================================
-    MODEL_PROFILE = os.getenv("GEMINI_MODEL_PROFILE", "stable").strip().lower()
+    MODEL_PROFILE = os.getenv("GEMINI_MODEL_PROFILE", "preview").strip().lower()
     if MODEL_PROFILE not in {"stable", "preview"}:
-        MODEL_PROFILE = "stable"
+        MODEL_PROFILE = "preview"
 
     _MODEL_DEFAULTS = {
         "stable": {
@@ -34,10 +34,10 @@ class AIConfig:
             "agent": "gemini-2.5-flash",
         },
         "preview": {
-            "chat": "gemini-3-flash-preview",
-            "report": "gemini-3.1-pro-preview",
-            "sentiment": "gemini-3-flash-preview",
-            "agent": "gemini-3-flash-preview",
+            "chat": "gemini-3-flash",
+            "report": "gemini-3-pro",
+            "sentiment": "gemini-3-flash",
+            "agent": "gemini-3-flash",
         },
     }
 
@@ -66,8 +66,16 @@ class AIConfig:
         "corporate": "ADK_CORPORATE_INSTRUCTION",
         "crypto": "ADK_CRYPTO_INSTRUCTION",
         "osint": "ADK_OSINT_INSTRUCTION",
+        "memory": "ADK_MEMORY_INSTRUCTION",
         "orchestrator": "ADK_ORCHESTRATOR_INSTRUCTION",
     }
+
+    # ============================================
+    # MongoDB Configuration
+    # ============================================
+    MONGODB_ENABLED = _get_bool_env("MONGODB_ENABLED", True)
+    MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING", "")
+    MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "vartovii")
 
     # ============================================
     # Generation Defaults
