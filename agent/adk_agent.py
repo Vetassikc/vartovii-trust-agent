@@ -67,6 +67,12 @@ from .tools.investigation_tools import (
     log_audit_event,
     save_investigation,
 )
+# Import tool functions — Similarity Search
+from .tools.similarity_tools import (
+    cross_entity_risk_scan,
+    find_similar_companies,
+    find_similar_crypto,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +148,8 @@ corporate_agent = LlmAgent(
     description=(
         "Expert in employer analytics. Use this agent for questions about "
         "companies as employers: Trust Score, employee reviews, comparisons, "
-        "vacancy intelligence, top employers ranking."
+        "vacancy intelligence, top employers ranking, and finding companies "
+        "with similar risk profiles."
     ),
     instruction=AIConfig.get_adk_instruction("corporate", CORPORATE_AGENT_INSTRUCTION),
     tools=[
@@ -152,6 +159,7 @@ corporate_agent = LlmAgent(
         FunctionTool(compare_companies),
         FunctionTool(get_company_reviews),
         FunctionTool(get_vacancy_intelligence),
+        FunctionTool(find_similar_companies),
     ],
 )
 
@@ -163,7 +171,8 @@ crypto_agent = LlmAgent(
     description=(
         "Expert in cryptocurrency analysis and on-chain forensics. Use this "
         "agent for crypto project data (Trust Score, tokenomics, investors), "
-        "wallet investigations, transaction analysis, token holder distribution."
+        "wallet investigations, transaction analysis, token holder distribution, "
+        "and finding crypto projects with similar risk profiles."
     ),
     instruction=AIConfig.get_adk_instruction("crypto", CRYPTO_AGENT_INSTRUCTION),
     tools=[
@@ -173,6 +182,7 @@ crypto_agent = LlmAgent(
         FunctionTool(get_transaction_history),
         FunctionTool(get_token_holders),
         FunctionTool(get_contract_info),
+        FunctionTool(find_similar_crypto),
     ],
 )
 
@@ -199,9 +209,10 @@ memory_agent = LlmAgent(
     name="memory_agent",
     model=AIConfig.ADK_MODEL,
     description=(
-        "Manages investigation persistence and audit trail. Use this agent to: "
-        "save investigation results after analysis, recall past investigations, "
-        "log significant actions, and query the audit trail."
+        "Manages investigation persistence, audit trail, and cross-entity risk scanning. "
+        "Use this agent to: save investigation results after analysis, recall past "
+        "investigations, log significant actions, query the audit trail, and scan "
+        "across all entity types for high-risk items."
     ),
     instruction=AIConfig.get_adk_instruction("memory", MEMORY_AGENT_INSTRUCTION),
     tools=[
@@ -209,6 +220,7 @@ memory_agent = LlmAgent(
         FunctionTool(get_investigation_history),
         FunctionTool(log_audit_event),
         FunctionTool(get_audit_trail),
+        FunctionTool(cross_entity_risk_scan),
     ],
 )
 
@@ -229,10 +241,10 @@ root_agent = LlmAgent(
 )
 
 # Log initialization summary
-tool_count = sum([6, 6, 1, 4])  # corporate + crypto + osint + memory
+tool_count = sum([7, 7, 1, 5])  # corporate + crypto + osint + memory
 mcp_status = "MongoDB MCP ✅" if mongo_mcp_toolset else "MongoDB MCP ❌ (no connection string)"
 logger.info(
     "🤖 Vartovii ADK Agent initialized: root + 4 sub-agents "
-    "(corporate: 6, crypto: 6, osint: 1, memory: 4 tools) | %s",
+    "(corporate: 7, crypto: 7, osint: 1, memory: 5 tools) | %s",
     mcp_status,
 )
