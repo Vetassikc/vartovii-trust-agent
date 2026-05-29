@@ -406,3 +406,120 @@ async def get_entity_detail(entity_type: str, slug: str) -> dict[str, Any]:
         )
 
     return {"entity_type": entity_type, "entity": entity}
+
+
+# ── Agent Chat ────────────────────────────────────────────────────────────
+
+
+# Lazy-loaded agent runner (initialized on first chat request)
+_runner = None
+_runner_lock = None
+
+
+def _get_runner():
+    """Lazy-initialize the ADK InMemoryRunner."""
+    import threading
+
+    global _runner, _runner_lock  # noqa: PLW0603
+
+    if _runner_lock is None:
+        _runner_lock = threading.Lock()
+
+    if _runner is not None:
+        return _runner
+
+    with _runner_lock:
+        if _runner is not None:
+            return _runner
+
+        try:
+            from google.adk.runners import InMemoryRunner
+            from agent.adk_agent import root_agent
+
+            _runner = InMemoryRunner(agent=root_agent, app_name="vartovii")
+            logger.info("🤖 ADK InMemoryRunner initialized for chat endpoint.")
+            return _runner
+        except Exception as exc:
+            logger.error("Failed to initialize ADK runner: %s", exc)
+            return None
+
+
+@app.post("/api/chat", tags=["Agent"])
+async def agent_chat(payload: dict[str, Any]) -> dict[str, Any]:
+    """Send a message to the Vartovii AI agent.
+
+    Request body:
+        {"message": "Tell me about Wirecard", "session_id": "optional-session-id"}
+
+    Returns:
+        {"response": "...", "session_id": "...", "agent": "vartovii_orchestrator"}
+    """
+    import asyncio
+
+    message = payload.get("message", "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="'message' field is required.")
+
+    session_id = payload.get("session_id", "default-session")
+    runner = _get_runner()
+
+    if runner is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Agent is not available. Check GOOGLE_API_KEY.",
+        )
+
+    try:
+        from google.adk.agents import Agent
+        from google.genai import types
+
+        content = types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=message)],
+        )
+
+        response_parts = []
+        async for event in runner.run_async(
+            user_id="web-user",
+            session_id=session_id,
+            new_message=content,
+        ):
+            if event.content and event.content.parts:
+                for part in event.content.parts:
+                    if part.text:
+                        response_parts.append(part.text)
+
+        response_text = "\n".join(response_parts) if response_parts else "No response from agent."
+
+        return {
+            "response": response_text,
+            "session_id": session_id,
+            "agent": "vartovii_orchestrator",
+        }
+
+    except Exception as exc:
+        logger.error("Agent chat error: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Agent error: {exc}")
+
+
+# ── Static Files (Landing Page) ──────────────────────────────────────────
+
+import pathlib
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+_WEB_DIR = pathlib.Path(__file__).resolve().parent.parent / "web"
+
+if _WEB_DIR.is_dir():
+    @app.get("/", tags=["Web"], include_in_schema=False)
+    async def serve_index():
+        """Serve the landing page."""
+        index_file = _WEB_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        return {"message": "Vartovii Trust Agent API — use /docs for Swagger UI"}
+
+    # Mount static assets (CSS, JS, images)
+    app.mount("/", StaticFiles(directory=str(_WEB_DIR)), name="web")
+    logger.info("📄 Serving static files from %s", _WEB_DIR)
+
