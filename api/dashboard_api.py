@@ -454,8 +454,6 @@ async def agent_chat(payload: dict[str, Any]) -> dict[str, Any]:
     Returns:
         {"response": "...", "session_id": "...", "agent": "vartovii_orchestrator"}
     """
-    import asyncio
-
     message = payload.get("message", "").strip()
     if not message:
         raise HTTPException(status_code=400, detail="'message' field is required.")
@@ -470,8 +468,26 @@ async def agent_chat(payload: dict[str, Any]) -> dict[str, Any]:
         )
 
     try:
-        from google.adk.agents import Agent
         from google.genai import types
+
+        # Ensure session exists (create if not)
+        user_id = "web-user"
+        try:
+            session = await runner.session_service.get_session(
+                app_name="vartovii",
+                user_id=user_id,
+                session_id=session_id,
+            )
+        except Exception:
+            session = None
+
+        if session is None:
+            session = await runner.session_service.create_session(
+                app_name="vartovii",
+                user_id=user_id,
+                session_id=session_id,
+            )
+            logger.info("Created new session: %s", session_id)
 
         content = types.Content(
             role="user",
@@ -480,7 +496,7 @@ async def agent_chat(payload: dict[str, Any]) -> dict[str, Any]:
 
         response_parts = []
         async for event in runner.run_async(
-            user_id="web-user",
+            user_id=user_id,
             session_id=session_id,
             new_message=content,
         ):
@@ -497,6 +513,8 @@ async def agent_chat(payload: dict[str, Any]) -> dict[str, Any]:
             "agent": "vartovii_orchestrator",
         }
 
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error("Agent chat error: %s", exc)
         raise HTTPException(status_code=500, detail=f"Agent error: {exc}")
