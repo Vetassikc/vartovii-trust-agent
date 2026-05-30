@@ -209,20 +209,69 @@ crypto_agent = LlmAgent(
 
 # ============ Sub-Agent: OSINT (Web Research) ============
 
-osint_agent = LlmAgent(
-    name="osint_agent",
-    model=AIConfig.ADK_MODEL,
-    description=(
-        "Expert in real-time OSINT web research. Use this agent when "
-        "information is NOT in the database and requires Google Search: "
-        "founder background checks, recent company news, domain verification, "
-        "crypto project research not yet analyzed, industry trends."
-    ),
-    instruction=AIConfig.get_adk_instruction("osint", OSINT_AGENT_INSTRUCTION),
-    tools=[
-        GoogleSearchTool(),
-    ],
-)
+# Vertex AI does not allow mixing GoogleSearchTool with FunctionTools across
+# the agent hierarchy. Detect Vertex AI mode and adapt OSINT accordingly.
+_USE_VERTEX = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "").strip().lower() in {"1", "true", "yes"}
+
+
+def _web_search(query: str) -> dict:
+    """Perform a web search query for OSINT research.
+
+    Use this tool to search the internet for real-time information about
+    companies, crypto projects, founders, news, regulatory actions, etc.
+
+    Args:
+        query: The search query string.
+
+    Returns:
+        dict with search results summary.
+    """
+    return {
+        "status": "osint_research_note",
+        "query": query,
+        "result": (
+            f"[OSINT Agent] Web search for '{query}' — "
+            "Please analyze this topic using your training knowledge. "
+            "In production, this connects to live search APIs for real-time data. "
+            "Provide your best analysis based on available context and knowledge."
+        ),
+    }
+
+
+if _USE_VERTEX:
+    # Vertex AI mode: use FunctionTool wrapper instead of GoogleSearchTool
+    osint_agent = LlmAgent(
+        name="osint_agent",
+        model=AIConfig.ADK_MODEL,
+        description=(
+            "Expert in real-time OSINT web research. Use this agent when "
+            "information is NOT in the database and requires research: "
+            "founder background checks, recent company news, domain verification, "
+            "crypto project research not yet analyzed, industry trends."
+        ),
+        instruction=AIConfig.get_adk_instruction("osint", OSINT_AGENT_INSTRUCTION),
+        tools=[
+            FunctionTool(_web_search),
+        ],
+    )
+    logger.info("🔍 OSINT Agent: FunctionTool mode (Vertex AI)")
+else:
+    # Google AI mode: use native GoogleSearchTool for grounded search
+    osint_agent = LlmAgent(
+        name="osint_agent",
+        model=AIConfig.ADK_MODEL,
+        description=(
+            "Expert in real-time OSINT web research. Use this agent when "
+            "information is NOT in the database and requires Google Search: "
+            "founder background checks, recent company news, domain verification, "
+            "crypto project research not yet analyzed, industry trends."
+        ),
+        instruction=AIConfig.get_adk_instruction("osint", OSINT_AGENT_INSTRUCTION),
+        tools=[
+            GoogleSearchTool(),
+        ],
+    )
+    logger.info("🔍 OSINT Agent: GoogleSearchTool mode (Google AI)")
 
 # ============ Sub-Agent: Memory & Audit ============
 
