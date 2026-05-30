@@ -249,10 +249,11 @@ memory_agent = LlmAgent(
 
 # ============ Root Orchestrator ============
 
-# Build orchestrator tools list (include MCP if available)
+# Build orchestrator tools list
+# Note: MCP toolset is disabled on orchestrator to avoid Vertex AI conflict
+# between GoogleSearchTool (OSINT sub-agent) and FunctionTools.
+# MongoDB access is handled via FunctionTool in corporate/crypto agents.
 orchestrator_tools = []
-if mongo_mcp_toolset is not None:
-    orchestrator_tools.append(mongo_mcp_toolset)
 
 root_agent = LlmAgent(
     name="vartovii_orchestrator",
