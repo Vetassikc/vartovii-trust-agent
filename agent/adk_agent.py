@@ -51,6 +51,11 @@ from .tools.corporate_tools import (
     list_companies,
     search_company,
 )
+from .tools.advanced_corporate_tools import (
+    get_hiring_trends,
+    get_industry_benchmark,
+    get_salary_insights,
+)
 # Import tool functions — Crypto
 from .tools.crypto_tools import (
     check_wallet,
@@ -59,6 +64,11 @@ from .tools.crypto_tools import (
     get_token_holders,
     get_transaction_history,
     search_crypto_projects,
+)
+from .tools.advanced_crypto_tools import (
+    get_defi_metrics,
+    get_liquidity_analysis,
+    get_whale_tracking,
 )
 # Import tool functions — Investigation & Audit
 from .tools.investigation_tools import (
@@ -72,6 +82,11 @@ from .tools.similarity_tools import (
     cross_entity_risk_scan,
     find_similar_companies,
     find_similar_crypto,
+)
+# Import tool functions — Network & Risk
+from .tools.network_tools import (
+    generate_risk_report,
+    get_entity_network,
 )
 
 logger = logging.getLogger(__name__)
@@ -160,6 +175,9 @@ corporate_agent = LlmAgent(
         FunctionTool(get_company_reviews),
         FunctionTool(get_vacancy_intelligence),
         FunctionTool(find_similar_companies),
+        FunctionTool(get_salary_insights),
+        FunctionTool(get_hiring_trends),
+        FunctionTool(get_industry_benchmark),
     ],
 )
 
@@ -183,6 +201,9 @@ crypto_agent = LlmAgent(
         FunctionTool(get_token_holders),
         FunctionTool(get_contract_info),
         FunctionTool(find_similar_crypto),
+        FunctionTool(get_liquidity_analysis),
+        FunctionTool(get_whale_tracking),
+        FunctionTool(get_defi_metrics),
     ],
 )
 
@@ -221,6 +242,8 @@ memory_agent = LlmAgent(
         FunctionTool(log_audit_event),
         FunctionTool(get_audit_trail),
         FunctionTool(cross_entity_risk_scan),
+        FunctionTool(get_entity_network),
+        FunctionTool(generate_risk_report),
     ],
 )
 
@@ -241,10 +264,10 @@ root_agent = LlmAgent(
 )
 
 # Log initialization summary
-tool_count = sum([7, 7, 1, 5])  # corporate + crypto + osint + memory
+tool_count = sum([10, 10, 1, 7])  # corporate + crypto + osint + memory
 mcp_status = "MongoDB MCP ✅" if mongo_mcp_toolset else "MongoDB MCP ❌ (no connection string)"
 logger.info(
     "🤖 Vartovii ADK Agent initialized: root + 4 sub-agents "
-    "(corporate: 7, crypto: 7, osint: 1, memory: 5 tools) | %s",
+    "(corporate: 10, crypto: 10, osint: 1, memory: 7 tools) | %s",
     mcp_status,
 )

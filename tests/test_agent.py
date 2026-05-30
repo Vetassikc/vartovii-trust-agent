@@ -47,13 +47,17 @@ class TestAgentArchitecture:
     def test_osint_agent_name(self):
         assert osint_agent.name == "osint_agent"
 
-    def test_corporate_agent_has_7_tools(self):
-        """Corporate agent should have exactly 7 tools."""
-        assert len(corporate_agent.tools) == 7
+    def test_corporate_agent_has_10_tools(self):
+        """Corporate agent should have exactly 10 tools."""
+        assert len(corporate_agent.tools) == 10
 
-    def test_crypto_agent_has_7_tools(self):
-        """Crypto agent should have exactly 7 tools."""
-        assert len(crypto_agent.tools) == 7
+    def test_crypto_agent_has_10_tools(self):
+        """Crypto agent should have exactly 10 tools."""
+        assert len(crypto_agent.tools) == 10
+
+    def test_memory_agent_has_7_tools(self):
+        """Memory agent should have exactly 7 tools."""
+        assert len(memory_agent.tools) == 7
 
     def test_osint_agent_has_google_search(self):
         """OSINT agent should have GoogleSearchTool."""

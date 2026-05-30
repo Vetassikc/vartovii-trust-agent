@@ -1057,6 +1057,335 @@ WALLETS: list[dict] = [
 ]
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATA ENRICHMENT — Salary, Hiring, Liquidity, Whale, DeFi fields
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Per-company salary & hiring data (keyed by profile_slug)
+_COMPANY_SALARY_DATA: dict[str, dict] = {
+    "sap-se": {
+        "salary_ranges": {
+            "junior": {"min": 52000, "max": 68000, "currency": "EUR"},
+            "mid": {"min": 72000, "max": 95000, "currency": "EUR"},
+            "senior": {"min": 100000, "max": 135000, "currency": "EUR"},
+        },
+        "median_salary": 82000,
+        "salary_vs_industry_avg_pct": 5.2,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30},
+    },
+    "bmw-group": {
+        "salary_ranges": {
+            "junior": {"min": 48000, "max": 62000, "currency": "EUR"},
+            "mid": {"min": 68000, "max": 90000, "currency": "EUR"},
+            "senior": {"min": 95000, "max": 130000, "currency": "EUR"},
+        },
+        "median_salary": 78000,
+        "salary_vs_industry_avg_pct": 12.3,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": False, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30, "company_car": True},
+    },
+    "wirecard-ag": {
+        "salary_ranges": {
+            "junior": {"min": 40000, "max": 52000, "currency": "EUR"},
+            "mid": {"min": 55000, "max": 72000, "currency": "EUR"},
+            "senior": {"min": 75000, "max": 100000, "currency": "EUR"},
+        },
+        "median_salary": 62000,
+        "salary_vs_industry_avg_pct": -18.5,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": True, "pension_plan": False, "bonus_structure": "none", "vacation_days": 25},
+    },
+    "google-llc": {
+        "salary_ranges": {
+            "junior": {"min": 95000, "max": 130000, "currency": "USD"},
+            "mid": {"min": 140000, "max": 195000, "currency": "USD"},
+            "senior": {"min": 210000, "max": 350000, "currency": "USD"},
+        },
+        "median_salary": 185000,
+        "salary_vs_industry_avg_pct": 28.4,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 25, "free_meals": True},
+    },
+    "apple-inc": {
+        "salary_ranges": {
+            "junior": {"min": 88000, "max": 120000, "currency": "USD"},
+            "mid": {"min": 130000, "max": 185000, "currency": "USD"},
+            "senior": {"min": 195000, "max": 320000, "currency": "USD"},
+        },
+        "median_salary": 172000,
+        "salary_vs_industry_avg_pct": 22.1,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 22, "product_discount": True},
+    },
+    "meta-platforms": {
+        "salary_ranges": {
+            "junior": {"min": 92000, "max": 128000, "currency": "USD"},
+            "mid": {"min": 145000, "max": 200000, "currency": "USD"},
+            "senior": {"min": 220000, "max": 380000, "currency": "USD"},
+        },
+        "median_salary": 190000,
+        "salary_vs_industry_avg_pct": 30.1,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 25, "free_meals": True},
+    },
+    "amazon-com": {
+        "salary_ranges": {
+            "junior": {"min": 72000, "max": 105000, "currency": "USD"},
+            "mid": {"min": 115000, "max": 165000, "currency": "USD"},
+            "senior": {"min": 175000, "max": 280000, "currency": "USD"},
+        },
+        "median_salary": 148000,
+        "salary_vs_industry_avg_pct": 8.7,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 20},
+    },
+    "tesla-inc": {
+        "salary_ranges": {
+            "junior": {"min": 68000, "max": 95000, "currency": "USD"},
+            "mid": {"min": 100000, "max": 145000, "currency": "USD"},
+            "senior": {"min": 155000, "max": 250000, "currency": "USD"},
+        },
+        "median_salary": 125000,
+        "salary_vs_industry_avg_pct": -5.3,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": True, "pension_plan": True, "bonus_structure": "none", "vacation_days": 15},
+    },
+    "deutsche-bank": {
+        "salary_ranges": {
+            "junior": {"min": 50000, "max": 65000, "currency": "EUR"},
+            "mid": {"min": 70000, "max": 95000, "currency": "EUR"},
+            "senior": {"min": 105000, "max": 160000, "currency": "EUR"},
+        },
+        "median_salary": 85000,
+        "salary_vs_industry_avg_pct": -2.1,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": False, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30},
+    },
+    "siemens-ag": {
+        "salary_ranges": {
+            "junior": {"min": 50000, "max": 65000, "currency": "EUR"},
+            "mid": {"min": 70000, "max": 92000, "currency": "EUR"},
+            "senior": {"min": 98000, "max": 140000, "currency": "EUR"},
+        },
+        "median_salary": 80000,
+        "salary_vs_industry_avg_pct": 8.9,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30},
+    },
+    "robert-bosch": {
+        "salary_ranges": {
+            "junior": {"min": 48000, "max": 62000, "currency": "EUR"},
+            "mid": {"min": 66000, "max": 88000, "currency": "EUR"},
+            "senior": {"min": 92000, "max": 130000, "currency": "EUR"},
+        },
+        "median_salary": 76000,
+        "salary_vs_industry_avg_pct": 6.4,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": False, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30},
+    },
+    "lidl-stiftung": {
+        "salary_ranges": {
+            "junior": {"min": 32000, "max": 42000, "currency": "EUR"},
+            "mid": {"min": 45000, "max": 60000, "currency": "EUR"},
+            "senior": {"min": 65000, "max": 90000, "currency": "EUR"},
+        },
+        "median_salary": 48000,
+        "salary_vs_industry_avg_pct": 14.2,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": False, "pension_plan": True, "bonus_structure": "quarterly", "vacation_days": 28},
+    },
+    "volkswagen-ag": {
+        "salary_ranges": {
+            "junior": {"min": 46000, "max": 60000, "currency": "EUR"},
+            "mid": {"min": 65000, "max": 88000, "currency": "EUR"},
+            "senior": {"min": 92000, "max": 125000, "currency": "EUR"},
+        },
+        "median_salary": 75000,
+        "salary_vs_industry_avg_pct": 3.8,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": False, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 30, "company_car": True},
+    },
+    "microsoft-corp": {
+        "salary_ranges": {
+            "junior": {"min": 90000, "max": 125000, "currency": "USD"},
+            "mid": {"min": 135000, "max": 190000, "currency": "USD"},
+            "senior": {"min": 200000, "max": 340000, "currency": "USD"},
+        },
+        "median_salary": 180000,
+        "salary_vs_industry_avg_pct": 25.6,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 25},
+    },
+    "netflix-inc": {
+        "salary_ranges": {
+            "junior": {"min": 100000, "max": 140000, "currency": "USD"},
+            "mid": {"min": 155000, "max": 220000, "currency": "USD"},
+            "senior": {"min": 240000, "max": 400000, "currency": "USD"},
+        },
+        "median_salary": 210000,
+        "salary_vs_industry_avg_pct": 38.5,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "none", "vacation_days": 0, "unlimited_pto": True},
+    },
+    "uber-technologies": {
+        "salary_ranges": {
+            "junior": {"min": 78000, "max": 108000, "currency": "USD"},
+            "mid": {"min": 118000, "max": 165000, "currency": "USD"},
+            "senior": {"min": 175000, "max": 280000, "currency": "USD"},
+        },
+        "median_salary": 142000,
+        "salary_vs_industry_avg_pct": 4.2,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 22},
+    },
+    "wework-inc": {
+        "salary_ranges": {
+            "junior": {"min": 45000, "max": 62000, "currency": "USD"},
+            "mid": {"min": 65000, "max": 90000, "currency": "USD"},
+            "senior": {"min": 95000, "max": 140000, "currency": "USD"},
+        },
+        "median_salary": 72000,
+        "salary_vs_industry_avg_pct": -28.3,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": False, "pension_plan": False, "bonus_structure": "none", "vacation_days": 15},
+    },
+    "theranos-inc": {
+        "salary_ranges": {
+            "junior": {"min": 55000, "max": 70000, "currency": "USD"},
+            "mid": {"min": 75000, "max": 100000, "currency": "USD"},
+            "senior": {"min": 110000, "max": 160000, "currency": "USD"},
+        },
+        "median_salary": 85000,
+        "salary_vs_industry_avg_pct": -22.0,
+        "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": True, "pension_plan": False, "bonus_structure": "none", "vacation_days": 15},
+    },
+    "revolut-ltd": {
+        "salary_ranges": {
+            "junior": {"min": 42000, "max": 58000, "currency": "GBP"},
+            "mid": {"min": 62000, "max": 85000, "currency": "GBP"},
+            "senior": {"min": 90000, "max": 140000, "currency": "GBP"},
+        },
+        "median_salary": 72000,
+        "salary_vs_industry_avg_pct": 2.8,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "quarterly", "vacation_days": 25},
+    },
+    "n26-gmbh": {
+        "salary_ranges": {
+            "junior": {"min": 42000, "max": 55000, "currency": "EUR"},
+            "mid": {"min": 58000, "max": 78000, "currency": "EUR"},
+            "senior": {"min": 82000, "max": 115000, "currency": "EUR"},
+        },
+        "median_salary": 65000,
+        "salary_vs_industry_avg_pct": -8.5,
+        "benefits_summary": {"health_insurance": True, "remote_work": True, "stock_options": True, "pension_plan": True, "bonus_structure": "annual", "vacation_days": 28},
+    },
+}
+
+_COMPANY_HIRING_DATA: dict[str, dict] = {
+    "sap-se": {"open_positions": 487, "growth_rate_pct": 6.2, "trending_roles": ["Cloud Engineer", "AI/ML Engineer", "SAP BTP Developer", "Solution Architect"], "remote_vs_office": {"remote_pct": 35.0, "hybrid_pct": 45.0, "office_pct": 20.0}, "diversity_score": 72.5, "avg_time_to_hire_days": 38},
+    "bmw-group": {"open_positions": 312, "growth_rate_pct": 3.8, "trending_roles": ["EV Powertrain Engineer", "Autonomous Driving Specialist", "Battery Chemist", "Software Engineer"], "remote_vs_office": {"remote_pct": 15.0, "hybrid_pct": 50.0, "office_pct": 35.0}, "diversity_score": 64.8, "avg_time_to_hire_days": 42},
+    "wirecard-ag": {"open_positions": 0, "growth_rate_pct": -100.0, "trending_roles": [], "remote_vs_office": {"remote_pct": 0.0, "hybrid_pct": 0.0, "office_pct": 0.0}, "diversity_score": 0.0, "avg_time_to_hire_days": 0},
+    "google-llc": {"open_positions": 1245, "growth_rate_pct": 8.5, "trending_roles": ["AI Research Scientist", "SRE", "Cloud Architect", "Product Manager", "Security Engineer"], "remote_vs_office": {"remote_pct": 25.0, "hybrid_pct": 55.0, "office_pct": 20.0}, "diversity_score": 78.3, "avg_time_to_hire_days": 45},
+    "apple-inc": {"open_positions": 892, "growth_rate_pct": 5.1, "trending_roles": ["Apple Silicon Engineer", "ML Engineer", "iOS Developer", "Hardware Engineer"], "remote_vs_office": {"remote_pct": 10.0, "hybrid_pct": 40.0, "office_pct": 50.0}, "diversity_score": 71.2, "avg_time_to_hire_days": 48},
+    "meta-platforms": {"open_positions": 634, "growth_rate_pct": -2.3, "trending_roles": ["AI Research Scientist", "VR/AR Developer", "Infrastructure Engineer", "Content Policy Specialist"], "remote_vs_office": {"remote_pct": 40.0, "hybrid_pct": 40.0, "office_pct": 20.0}, "diversity_score": 68.9, "avg_time_to_hire_days": 35},
+    "amazon-com": {"open_positions": 3421, "growth_rate_pct": 4.2, "trending_roles": ["Software Dev Engineer", "AWS Solutions Architect", "Operations Manager", "Data Engineer"], "remote_vs_office": {"remote_pct": 15.0, "hybrid_pct": 35.0, "office_pct": 50.0}, "diversity_score": 62.4, "avg_time_to_hire_days": 32},
+    "tesla-inc": {"open_positions": 756, "growth_rate_pct": 12.8, "trending_roles": ["Battery Engineer", "Autopilot Software Engineer", "Manufacturing Engineer", "Robotics Engineer"], "remote_vs_office": {"remote_pct": 5.0, "hybrid_pct": 15.0, "office_pct": 80.0}, "diversity_score": 48.7, "avg_time_to_hire_days": 28},
+    "deutsche-bank": {"open_positions": 298, "growth_rate_pct": -1.5, "trending_roles": ["Risk Analyst", "Compliance Officer", "Quantitative Developer", "Cybersecurity Analyst"], "remote_vs_office": {"remote_pct": 20.0, "hybrid_pct": 55.0, "office_pct": 25.0}, "diversity_score": 58.1, "avg_time_to_hire_days": 52},
+    "siemens-ag": {"open_positions": 567, "growth_rate_pct": 5.5, "trending_roles": ["IoT Developer", "Digital Twin Engineer", "PLM Specialist", "Industrial AI Engineer"], "remote_vs_office": {"remote_pct": 30.0, "hybrid_pct": 45.0, "office_pct": 25.0}, "diversity_score": 70.3, "avg_time_to_hire_days": 40},
+    "robert-bosch": {"open_positions": 823, "growth_rate_pct": 4.1, "trending_roles": ["ADAS Engineer", "Embedded Software Developer", "EV Component Engineer", "IoT Architect"], "remote_vs_office": {"remote_pct": 20.0, "hybrid_pct": 50.0, "office_pct": 30.0}, "diversity_score": 66.7, "avg_time_to_hire_days": 36},
+    "lidl-stiftung": {"open_positions": 1456, "growth_rate_pct": 7.3, "trending_roles": ["Store Manager", "Supply Chain Analyst", "E-commerce Developer", "Category Manager"], "remote_vs_office": {"remote_pct": 5.0, "hybrid_pct": 15.0, "office_pct": 80.0}, "diversity_score": 55.2, "avg_time_to_hire_days": 18},
+    "volkswagen-ag": {"open_positions": 445, "growth_rate_pct": 1.2, "trending_roles": ["EV Software Engineer", "Battery Cell Developer", "Autonomous Driving Engineer", "CARIAD Developer"], "remote_vs_office": {"remote_pct": 15.0, "hybrid_pct": 45.0, "office_pct": 40.0}, "diversity_score": 60.5, "avg_time_to_hire_days": 44},
+    "microsoft-corp": {"open_positions": 1678, "growth_rate_pct": 9.1, "trending_roles": ["Azure Cloud Engineer", "Copilot AI Developer", "Security Researcher", "DevOps Engineer"], "remote_vs_office": {"remote_pct": 45.0, "hybrid_pct": 40.0, "office_pct": 15.0}, "diversity_score": 82.1, "avg_time_to_hire_days": 40},
+    "netflix-inc": {"open_positions": 134, "growth_rate_pct": 3.2, "trending_roles": ["Streaming Infrastructure Engineer", "Content Algorithm Engineer", "Security Engineer", "Data Scientist"], "remote_vs_office": {"remote_pct": 35.0, "hybrid_pct": 45.0, "office_pct": 20.0}, "diversity_score": 74.6, "avg_time_to_hire_days": 50},
+    "uber-technologies": {"open_positions": 389, "growth_rate_pct": 2.8, "trending_roles": ["ML Platform Engineer", "Marketplace Economist", "Maps Engineer", "Safety Data Analyst"], "remote_vs_office": {"remote_pct": 30.0, "hybrid_pct": 45.0, "office_pct": 25.0}, "diversity_score": 65.3, "avg_time_to_hire_days": 34},
+    "wework-inc": {"open_positions": 0, "growth_rate_pct": -100.0, "trending_roles": [], "remote_vs_office": {"remote_pct": 0.0, "hybrid_pct": 0.0, "office_pct": 0.0}, "diversity_score": 0.0, "avg_time_to_hire_days": 0},
+    "theranos-inc": {"open_positions": 0, "growth_rate_pct": -100.0, "trending_roles": [], "remote_vs_office": {"remote_pct": 0.0, "hybrid_pct": 0.0, "office_pct": 0.0}, "diversity_score": 0.0, "avg_time_to_hire_days": 0},
+    "revolut-ltd": {"open_positions": 267, "growth_rate_pct": 15.4, "trending_roles": ["Backend Engineer", "Compliance Analyst", "Growth Marketer", "Crypto Product Manager"], "remote_vs_office": {"remote_pct": 50.0, "hybrid_pct": 35.0, "office_pct": 15.0}, "diversity_score": 69.8, "avg_time_to_hire_days": 25},
+    "n26-gmbh": {"open_positions": 78, "growth_rate_pct": -4.2, "trending_roles": ["Mobile Engineer", "Risk Analyst", "Regulatory Affairs Specialist", "Data Engineer"], "remote_vs_office": {"remote_pct": 40.0, "hybrid_pct": 40.0, "office_pct": 20.0}, "diversity_score": 72.0, "avg_time_to_hire_days": 30},
+}
+
+# Per-crypto liquidity, whale, and DeFi data (keyed by slug)
+_CRYPTO_LIQUIDITY_DATA: dict[str, dict] = {
+    "bitcoin": {"dex_liquidity_usd": 2_450_000_000, "trading_volume_24h_usd": 28_500_000_000, "liquidity_depth": {"plus_2_pct_usd": 850_000_000, "minus_2_pct_usd": 780_000_000}, "impermanent_loss_risk": "LOW", "major_dex_pairs": [{"pair": "BTC/USDT", "dex": "Binance", "liquidity_usd": 1_200_000_000, "volume_24h_usd": 8_500_000_000}, {"pair": "WBTC/ETH", "dex": "Uniswap V3", "liquidity_usd": 450_000_000, "volume_24h_usd": 120_000_000}], "liquidity_score": 98.2},
+    "ethereum": {"dex_liquidity_usd": 3_800_000_000, "trading_volume_24h_usd": 15_200_000_000, "liquidity_depth": {"plus_2_pct_usd": 1_200_000_000, "minus_2_pct_usd": 1_050_000_000}, "impermanent_loss_risk": "LOW", "major_dex_pairs": [{"pair": "ETH/USDC", "dex": "Uniswap V3", "liquidity_usd": 980_000_000, "volume_24h_usd": 2_400_000_000}, {"pair": "ETH/USDT", "dex": "Curve", "liquidity_usd": 650_000_000, "volume_24h_usd": 1_800_000_000}], "liquidity_score": 97.5},
+    "uniswap": {"dex_liquidity_usd": 285_000_000, "trading_volume_24h_usd": 245_000_000, "liquidity_depth": {"plus_2_pct_usd": 42_000_000, "minus_2_pct_usd": 38_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "UNI/ETH", "dex": "Uniswap V3", "liquidity_usd": 185_000_000, "volume_24h_usd": 95_000_000}, {"pair": "UNI/USDC", "dex": "Uniswap V3", "liquidity_usd": 72_000_000, "volume_24h_usd": 45_000_000}], "liquidity_score": 82.4},
+    "solana": {"dex_liquidity_usd": 890_000_000, "trading_volume_24h_usd": 3_200_000_000, "liquidity_depth": {"plus_2_pct_usd": 280_000_000, "minus_2_pct_usd": 245_000_000}, "impermanent_loss_risk": "LOW", "major_dex_pairs": [{"pair": "SOL/USDC", "dex": "Raydium", "liquidity_usd": 340_000_000, "volume_24h_usd": 890_000_000}, {"pair": "SOL/USDT", "dex": "Orca", "liquidity_usd": 210_000_000, "volume_24h_usd": 560_000_000}], "liquidity_score": 91.3},
+    "cardano": {"dex_liquidity_usd": 120_000_000, "trading_volume_24h_usd": 380_000_000, "liquidity_depth": {"plus_2_pct_usd": 18_000_000, "minus_2_pct_usd": 15_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "ADA/USDT", "dex": "Minswap", "liquidity_usd": 45_000_000, "volume_24h_usd": 28_000_000}], "liquidity_score": 68.9},
+    "polkadot": {"dex_liquidity_usd": 95_000_000, "trading_volume_24h_usd": 210_000_000, "liquidity_depth": {"plus_2_pct_usd": 14_000_000, "minus_2_pct_usd": 12_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "DOT/USDT", "dex": "HydraDX", "liquidity_usd": 38_000_000, "volume_24h_usd": 22_000_000}], "liquidity_score": 65.4},
+    "chainlink": {"dex_liquidity_usd": 310_000_000, "trading_volume_24h_usd": 520_000_000, "liquidity_depth": {"plus_2_pct_usd": 48_000_000, "minus_2_pct_usd": 42_000_000}, "impermanent_loss_risk": "LOW", "major_dex_pairs": [{"pair": "LINK/ETH", "dex": "Uniswap V3", "liquidity_usd": 120_000_000, "volume_24h_usd": 85_000_000}, {"pair": "LINK/USDC", "dex": "Uniswap V3", "liquidity_usd": 78_000_000, "volume_24h_usd": 52_000_000}], "liquidity_score": 84.7},
+    "aave": {"dex_liquidity_usd": 145_000_000, "trading_volume_24h_usd": 185_000_000, "liquidity_depth": {"plus_2_pct_usd": 22_000_000, "minus_2_pct_usd": 19_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "AAVE/ETH", "dex": "Uniswap V3", "liquidity_usd": 68_000_000, "volume_24h_usd": 42_000_000}], "liquidity_score": 76.2},
+    "lido": {"dex_liquidity_usd": 420_000_000, "trading_volume_24h_usd": 95_000_000, "liquidity_depth": {"plus_2_pct_usd": 65_000_000, "minus_2_pct_usd": 58_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "stETH/ETH", "dex": "Curve", "liquidity_usd": 320_000_000, "volume_24h_usd": 45_000_000}], "liquidity_score": 79.8},
+    "arbitrum": {"dex_liquidity_usd": 180_000_000, "trading_volume_24h_usd": 290_000_000, "liquidity_depth": {"plus_2_pct_usd": 28_000_000, "minus_2_pct_usd": 24_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "ARB/ETH", "dex": "Uniswap V3", "liquidity_usd": 72_000_000, "volume_24h_usd": 48_000_000}], "liquidity_score": 72.1},
+    "optimism": {"dex_liquidity_usd": 95_000_000, "trading_volume_24h_usd": 145_000_000, "liquidity_depth": {"plus_2_pct_usd": 15_000_000, "minus_2_pct_usd": 12_000_000}, "impermanent_loss_risk": "MEDIUM", "major_dex_pairs": [{"pair": "OP/ETH", "dex": "Uniswap V3", "liquidity_usd": 42_000_000, "volume_24h_usd": 28_000_000}], "liquidity_score": 67.5},
+    "dydx": {"dex_liquidity_usd": 65_000_000, "trading_volume_24h_usd": 380_000_000, "liquidity_depth": {"plus_2_pct_usd": 10_000_000, "minus_2_pct_usd": 8_500_000}, "impermanent_loss_risk": "HIGH", "major_dex_pairs": [{"pair": "DYDX/USDC", "dex": "dYdX DEX", "liquidity_usd": 45_000_000, "volume_24h_usd": 280_000_000}], "liquidity_score": 61.3},
+    "ftx-token": {"dex_liquidity_usd": 1_200_000, "trading_volume_24h_usd": 850_000, "liquidity_depth": {"plus_2_pct_usd": 180_000, "minus_2_pct_usd": 120_000}, "impermanent_loss_risk": "HIGH", "major_dex_pairs": [{"pair": "FTT/USDT", "dex": "Uniswap V3", "liquidity_usd": 450_000, "volume_24h_usd": 280_000}], "liquidity_score": 8.5},
+    "terra-luna": {"dex_liquidity_usd": 50_000, "trading_volume_24h_usd": 12_000, "liquidity_depth": {"plus_2_pct_usd": 5_000, "minus_2_pct_usd": 3_000}, "impermanent_loss_risk": "HIGH", "major_dex_pairs": [], "liquidity_score": 2.1},
+    "safemoon": {"dex_liquidity_usd": 280_000, "trading_volume_24h_usd": 45_000, "liquidity_depth": {"plus_2_pct_usd": 28_000, "minus_2_pct_usd": 18_000}, "impermanent_loss_risk": "HIGH", "major_dex_pairs": [{"pair": "SFM/BNB", "dex": "PancakeSwap", "liquidity_usd": 180_000, "volume_24h_usd": 32_000}], "liquidity_score": 5.8},
+}
+
+_CRYPTO_WHALE_DATA: dict[str, dict] = {
+    "bitcoin": {"top_10_holders": [{"rank": 1, "address": "0x34xk9...satoshi", "balance_pct": 5.2, "label": "Satoshi Nakamoto (est.)"}, {"rank": 2, "address": "0xBE0e...binance7", "balance_pct": 3.8, "label": "Binance Cold Wallet"}, {"rank": 3, "address": "0x28c6...binance", "balance_pct": 2.9, "label": "Binance Hot Wallet"}], "whale_concentration_pct": 15.4, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 45_000_000, "timestamp": "2026-05-28T14:00:00Z"}, {"direction": "SELL", "amount_usd": 12_000_000, "timestamp": "2026-05-27T09:30:00Z"}], "accumulation_distribution_signal": "ACCUMULATION"},
+    "ethereum": {"top_10_holders": [{"rank": 1, "address": "0x0000...deposit", "balance_pct": 26.8, "label": "ETH2 Deposit Contract"}, {"rank": 2, "address": "0xBE0e...binance", "balance_pct": 3.2, "label": "Binance Cold Wallet"}, {"rank": 3, "address": "0xC02a...wrapped", "balance_pct": 2.8, "label": "Wrapped ETH Contract"}], "whale_concentration_pct": 38.5, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 28_000_000, "timestamp": "2026-05-29T10:00:00Z"}], "accumulation_distribution_signal": "ACCUMULATION"},
+    "uniswap": {"top_10_holders": [{"rank": 1, "address": "0x1a9c...treasury", "balance_pct": 18.0, "label": "Uniswap Treasury"}, {"rank": 2, "address": "0x4b4e...a16z", "balance_pct": 5.4, "label": "a16z Wallet"}, {"rank": 3, "address": "0x7f0e...paradigm", "balance_pct": 4.1, "label": "Paradigm"}], "whale_concentration_pct": 42.3, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 8_500_000, "timestamp": "2026-05-26T16:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "solana": {"top_10_holders": [{"rank": 1, "address": "0x9a3f...foundation", "balance_pct": 12.5, "label": "Solana Foundation"}, {"rank": 2, "address": "0x6d2e...labs", "balance_pct": 8.3, "label": "Solana Labs"}], "whale_concentration_pct": 32.1, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 15_000_000, "timestamp": "2026-05-28T11:00:00Z"}], "accumulation_distribution_signal": "ACCUMULATION"},
+    "cardano": {"top_10_holders": [{"rank": 1, "address": "addr1...iohk", "balance_pct": 8.2, "label": "IOHK Treasury"}, {"rank": 2, "address": "addr1...emurgo", "balance_pct": 5.1, "label": "Emurgo"}], "whale_concentration_pct": 22.8, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 3_200_000, "timestamp": "2026-05-27T08:00:00Z"}], "accumulation_distribution_signal": "NEUTRAL"},
+    "polkadot": {"top_10_holders": [{"rank": 1, "address": "15oF4...w3f", "balance_pct": 11.5, "label": "Web3 Foundation"}, {"rank": 2, "address": "14Gjs...parity", "balance_pct": 6.2, "label": "Parity Technologies"}], "whale_concentration_pct": 28.4, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 2_800_000, "timestamp": "2026-05-25T14:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "chainlink": {"top_10_holders": [{"rank": 1, "address": "0x5589...treasury", "balance_pct": 35.0, "label": "Chainlink Treasury"}, {"rank": 2, "address": "0x7c83...team", "balance_pct": 8.5, "label": "Team Wallet"}], "whale_concentration_pct": 52.8, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 5_600_000, "timestamp": "2026-05-29T07:00:00Z"}], "accumulation_distribution_signal": "ACCUMULATION"},
+    "aave": {"top_10_holders": [{"rank": 1, "address": "0xec56...ecosystem", "balance_pct": 14.2, "label": "Aave Ecosystem Reserve"}, {"rank": 2, "address": "0x25f2...safety", "balance_pct": 6.8, "label": "Safety Module"}], "whale_concentration_pct": 34.6, "recent_whale_movements": [{"direction": "BUY", "amount_usd": 4_200_000, "timestamp": "2026-05-28T13:00:00Z"}], "accumulation_distribution_signal": "ACCUMULATION"},
+    "lido": {"top_10_holders": [{"rank": 1, "address": "0x3e40...treasury", "balance_pct": 22.0, "label": "Lido DAO Treasury"}, {"rank": 2, "address": "0x4b4e...a16z", "balance_pct": 4.8, "label": "a16z Wallet"}], "whale_concentration_pct": 41.2, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 6_100_000, "timestamp": "2026-05-27T15:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "arbitrum": {"top_10_holders": [{"rank": 1, "address": "0xf3fc...dao", "balance_pct": 42.8, "label": "Arbitrum DAO Treasury"}, {"rank": 2, "address": "0x2c8e...offchain", "balance_pct": 7.5, "label": "Offchain Labs"}], "whale_concentration_pct": 58.9, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 9_400_000, "timestamp": "2026-05-26T12:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "optimism": {"top_10_holders": [{"rank": 1, "address": "0x2501...foundation", "balance_pct": 30.5, "label": "Optimism Foundation"}, {"rank": 2, "address": "0x4200...eco", "balance_pct": 8.9, "label": "Ecosystem Fund"}], "whale_concentration_pct": 52.1, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 7_200_000, "timestamp": "2026-05-25T10:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "dydx": {"top_10_holders": [{"rank": 1, "address": "0xb9d4...community", "balance_pct": 26.4, "label": "Community Treasury"}, {"rank": 2, "address": "0x68c5...investors", "balance_pct": 12.1, "label": "Investor Pool"}], "whale_concentration_pct": 55.3, "recent_whale_movements": [{"direction": "SELL", "amount_usd": 3_800_000, "timestamp": "2026-05-24T18:00:00Z"}], "accumulation_distribution_signal": "DISTRIBUTION"},
+    "ftx-token": {"top_10_holders": [{"rank": 1, "address": "0xa7ef...estate", "balance_pct": 45.2, "label": "FTX Bankruptcy Estate"}, {"rank": 2, "address": "0x2faf...alameda", "balance_pct": 18.7, "label": "Alameda Research (frozen)"}], "whale_concentration_pct": 78.4, "recent_whale_movements": [], "accumulation_distribution_signal": "NEUTRAL"},
+    "terra-luna": {"top_10_holders": [{"rank": 1, "address": "terra1...lfg", "balance_pct": 28.5, "label": "Luna Foundation Guard (frozen)"}, {"rank": 2, "address": "terra1...kwon", "balance_pct": 15.2, "label": "Do Kwon (frozen)"}], "whale_concentration_pct": 62.8, "recent_whale_movements": [], "accumulation_distribution_signal": "NEUTRAL"},
+    "safemoon": {"top_10_holders": [{"rank": 1, "address": "0x8076...lp", "balance_pct": 32.1, "label": "Locked LP"}, {"rank": 2, "address": "0x9a7b...dev", "balance_pct": 15.8, "label": "Dev Wallet (frozen)"}], "whale_concentration_pct": 68.5, "recent_whale_movements": [], "accumulation_distribution_signal": "NEUTRAL"},
+}
+
+_CRYPTO_DEFI_DATA: dict[str, dict] = {
+    "bitcoin": {"tvl_usd": 1_200_000_000, "apy_pct": 1.2, "protocol_revenue_30d_usd": 890_000_000, "audit_status": {"audited": True, "auditor": "Community Reviewed", "last_audit_date": "2026-01-01", "critical_findings": 0}, "exploit_history": []},
+    "ethereum": {"tvl_usd": 58_700_000_000, "apy_pct": 3.8, "protocol_revenue_30d_usd": 1_450_000_000, "audit_status": {"audited": True, "auditor": "Multiple (EF, Trail of Bits)", "last_audit_date": "2026-03-15", "critical_findings": 0}, "exploit_history": []},
+    "uniswap": {"tvl_usd": 5_200_000_000, "apy_pct": 12.5, "protocol_revenue_30d_usd": 78_000_000, "audit_status": {"audited": True, "auditor": "Trail of Bits", "last_audit_date": "2026-02-20", "critical_findings": 0}, "exploit_history": []},
+    "solana": {"tvl_usd": 8_900_000_000, "apy_pct": 6.8, "protocol_revenue_30d_usd": 42_000_000, "audit_status": {"audited": True, "auditor": "Kudelski Security", "last_audit_date": "2026-01-10", "critical_findings": 0}, "exploit_history": [{"date": "2022-08-02", "type": "Slope Wallet Exploit", "loss_usd": 8_000_000, "recovered": False}]},
+    "cardano": {"tvl_usd": 420_000_000, "apy_pct": 4.2, "protocol_revenue_30d_usd": 2_800_000, "audit_status": {"audited": True, "auditor": "Tweag", "last_audit_date": "2025-12-01", "critical_findings": 0}, "exploit_history": []},
+    "polkadot": {"tvl_usd": 1_200_000_000, "apy_pct": 14.5, "protocol_revenue_30d_usd": 5_600_000, "audit_status": {"audited": True, "auditor": "SRLabs", "last_audit_date": "2025-11-15", "critical_findings": 0}, "exploit_history": []},
+    "chainlink": {"tvl_usd": 18_500_000_000, "apy_pct": 5.2, "protocol_revenue_30d_usd": 15_000_000, "audit_status": {"audited": True, "auditor": "CertiK", "last_audit_date": "2026-04-01", "critical_findings": 0}, "exploit_history": []},
+    "aave": {"tvl_usd": 12_800_000_000, "apy_pct": 8.4, "protocol_revenue_30d_usd": 32_000_000, "audit_status": {"audited": True, "auditor": "OpenZeppelin", "last_audit_date": "2026-03-10", "critical_findings": 0}, "exploit_history": [{"date": "2023-11-12", "type": "Flash Loan Governance Attack", "loss_usd": 1_600_000, "recovered": True}]},
+    "lido": {"tvl_usd": 14_500_000_000, "apy_pct": 3.9, "protocol_revenue_30d_usd": 28_000_000, "audit_status": {"audited": True, "auditor": "Quantstamp", "last_audit_date": "2026-02-15", "critical_findings": 0}, "exploit_history": []},
+    "arbitrum": {"tvl_usd": 3_200_000_000, "apy_pct": 5.8, "protocol_revenue_30d_usd": 8_500_000, "audit_status": {"audited": True, "auditor": "Trail of Bits", "last_audit_date": "2026-01-20", "critical_findings": 0}, "exploit_history": []},
+    "optimism": {"tvl_usd": 1_800_000_000, "apy_pct": 6.2, "protocol_revenue_30d_usd": 5_200_000, "audit_status": {"audited": True, "auditor": "OpenZeppelin", "last_audit_date": "2025-12-10", "critical_findings": 1}, "exploit_history": [{"date": "2022-02-03", "type": "Token Bridge Bug", "loss_usd": 0, "recovered": True}]},
+    "dydx": {"tvl_usd": 340_000_000, "apy_pct": 18.5, "protocol_revenue_30d_usd": 12_000_000, "audit_status": {"audited": True, "auditor": "Consensys Diligence", "last_audit_date": "2025-10-05", "critical_findings": 0}, "exploit_history": []},
+    "ftx-token": {"tvl_usd": 0, "apy_pct": 0.0, "protocol_revenue_30d_usd": 0, "audit_status": {"audited": False, "auditor": None, "last_audit_date": None, "critical_findings": 0}, "exploit_history": [{"date": "2022-11-11", "type": "Exchange Collapse / Misappropriation", "loss_usd": 8_000_000_000, "recovered": False}]},
+    "terra-luna": {"tvl_usd": 0, "apy_pct": 0.0, "protocol_revenue_30d_usd": 0, "audit_status": {"audited": False, "auditor": None, "last_audit_date": None, "critical_findings": 0}, "exploit_history": [{"date": "2022-05-09", "type": "Algorithmic Stablecoin Death Spiral", "loss_usd": 40_000_000_000, "recovered": False}]},
+    "safemoon": {"tvl_usd": 0, "apy_pct": 0.0, "protocol_revenue_30d_usd": 0, "audit_status": {"audited": True, "auditor": "CertiK", "last_audit_date": "2021-05-10", "critical_findings": 8}, "exploit_history": [{"date": "2023-03-28", "type": "LP Drain / Rug Pull", "loss_usd": 8_900_000, "recovered": False}]},
+}
+
+
+def _enrich_companies(companies: list[dict]) -> None:
+    """Add salary_data and hiring_data fields to company documents."""
+    for company in companies:
+        slug = company.get("profile_slug", "")
+        company["salary_data"] = _COMPANY_SALARY_DATA.get(slug, {
+            "salary_ranges": {
+                "junior": {"min": 45000, "max": 60000, "currency": "EUR"},
+                "mid": {"min": 60000, "max": 80000, "currency": "EUR"},
+                "senior": {"min": 85000, "max": 120000, "currency": "EUR"},
+            },
+            "median_salary": 70000,
+            "salary_vs_industry_avg_pct": 0.0,
+            "benefits_summary": {"health_insurance": True, "remote_work": False, "stock_options": False, "pension_plan": True, "bonus_structure": "none", "vacation_days": 25},
+        })
+        company["hiring_data"] = _COMPANY_HIRING_DATA.get(slug, {
+            "open_positions": 0, "growth_rate_pct": 0.0, "trending_roles": [],
+            "remote_vs_office": {"remote_pct": 0.0, "hybrid_pct": 0.0, "office_pct": 100.0},
+            "diversity_score": 50.0, "avg_time_to_hire_days": 30,
+        })
+
+
+def _enrich_crypto_projects(projects: list[dict]) -> None:
+    """Add liquidity_data, whale_data, and defi_data fields to crypto documents."""
+    for project in projects:
+        slug = project.get("slug", "")
+        project["liquidity_data"] = _CRYPTO_LIQUIDITY_DATA.get(slug, {
+            "dex_liquidity_usd": 0, "trading_volume_24h_usd": 0,
+            "liquidity_depth": {"plus_2_pct_usd": 0, "minus_2_pct_usd": 0},
+            "impermanent_loss_risk": "HIGH", "major_dex_pairs": [], "liquidity_score": 0.0,
+        })
+        project["whale_data"] = _CRYPTO_WHALE_DATA.get(slug, {
+            "top_10_holders": [], "whale_concentration_pct": 0.0,
+            "recent_whale_movements": [], "accumulation_distribution_signal": "NEUTRAL",
+        })
+        project["defi_data"] = _CRYPTO_DEFI_DATA.get(slug, {
+            "tvl_usd": 0, "apy_pct": 0.0, "protocol_revenue_30d_usd": 0,
+            "audit_status": {"audited": False, "auditor": None, "last_audit_date": None, "critical_findings": 0},
+            "exploit_history": [],
+        })
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Seeding Logic
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1092,7 +1421,8 @@ def _drop_collections(db) -> None:
 
 
 def _seed_companies(db) -> int:
-    """Insert company documents."""
+    """Insert company documents (enriched with salary + hiring data)."""
+    _enrich_companies(COMPANIES)
     coll = db["companies"]
     coll.insert_many(COMPANIES)
     return len(COMPANIES)
@@ -1106,7 +1436,8 @@ def _seed_reviews(db) -> int:
 
 
 def _seed_crypto_projects(db) -> int:
-    """Insert crypto project documents."""
+    """Insert crypto project documents (enriched with liquidity + whale + DeFi data)."""
+    _enrich_crypto_projects(CRYPTO_PROJECTS)
     coll = db["crypto_projects"]
     coll.insert_many(CRYPTO_PROJECTS)
     return len(CRYPTO_PROJECTS)
