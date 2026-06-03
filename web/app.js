@@ -1,22 +1,26 @@
 /* ══════════════════════════════════════════════════════════════════
    VARTOVII TRUST INTELLIGENCE DASHBOARD — APPLICATION LOGIC
-   Vanilla JS · No frameworks · All relative API URLs
+   Vanilla JS · No frameworks · relative or live API URLs
    ══════════════════════════════════════════════════════════════════ */
 
 (function () {
     'use strict';
 
     // ─── Configuration ───
+    const LIVE_API_ORIGIN = 'https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app';
+    const API_BASE = window.location.protocol === 'file:' ? LIVE_API_ORIGIN : '';
+    const apiUrl = (path) => `${API_BASE}${path}`;
+
     const API = {
-        health:         '/api/health',
-        stats:          '/api/stats',
-        leaderboard:    '/api/leaderboard',
-        investigations: '/api/investigations',
-        audit:          '/api/audit',
-        readiness:      '/api/readiness',
-        chat:           '/api/chat',
-        entityCompany:  '/api/entity/company/',
-        entityCrypto:   '/api/entity/crypto/',
+        health:         apiUrl('/api/health'),
+        stats:          apiUrl('/api/stats'),
+        leaderboard:    apiUrl('/api/leaderboard'),
+        investigations: apiUrl('/api/investigations'),
+        audit:          apiUrl('/api/audit'),
+        readiness:      apiUrl('/api/readiness'),
+        chat:           apiUrl('/api/chat'),
+        entityCompany:  apiUrl('/api/entity/company/'),
+        entityCrypto:   apiUrl('/api/entity/crypto/'),
     };
 
     const REFRESH_INTERVAL = 60_000; // 60 seconds
@@ -48,10 +52,11 @@
 
     // ─── Utility: Fetch with timeout & error handling ───
     async function apiFetch(url, options = {}) {
+        const { timeoutMs = 30_000, ...fetchOptions } = options;
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30_000);
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
+            const res = await fetch(url, { ...fetchOptions, signal: controller.signal });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } finally {
@@ -405,12 +410,16 @@
                     message: text.trim(),
                     session_id: SESSION_ID,
                 }),
+                timeoutMs: 90_000,
             });
             setTypingIndicator(false);
             addChatMessage('agent', data.response || 'No response received.', data.agent);
         } catch (err) {
             setTypingIndicator(false);
-            addChatMessage('agent', `**Error:** Could not reach the agent. ${err.message}`);
+            const message = err.name === 'AbortError'
+                ? 'The agent request timed out while waiting for the model. Try a narrower prompt or run it again.'
+                : `Could not reach the agent. ${err.message}`;
+            addChatMessage('agent', `**Error:** ${message}`);
         } finally {
             isChatBusy = false;
             sendBtn.disabled = false;
