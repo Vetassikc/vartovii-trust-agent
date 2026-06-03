@@ -30,7 +30,7 @@ class TestTelemetryService:
 
     def test_record_fallback(self):
         t = AgentTelemetry()
-        t.record_fallback("chat", "gemini-2.5-pro", "gemini-2.5-flash")
+        t.record_fallback("chat", "gemini-3.1-pro-preview", "gemini-3.5-flash")
         assert t.metrics["fallback_activations"] == 1
 
     def test_get_summary(self):

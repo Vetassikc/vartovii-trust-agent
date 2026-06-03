@@ -20,24 +20,30 @@ class AIConfig:
     """Central configuration for AI services and agent models."""
 
     # ============================================
-    # Model Profiles: stable (GA) vs preview (3.x)
+    # Model Profiles: stable (GA), cost (GA), and preview (explicit opt-in)
     # ============================================
-    MODEL_PROFILE = os.getenv("GEMINI_MODEL_PROFILE", "preview").strip().lower()
-    if MODEL_PROFILE not in {"stable", "preview"}:
-        MODEL_PROFILE = "preview"
+    MODEL_PROFILE = os.getenv("GEMINI_MODEL_PROFILE", "stable").strip().lower()
+    if MODEL_PROFILE not in {"stable", "cost", "preview"}:
+        MODEL_PROFILE = "stable"
 
     _MODEL_DEFAULTS = {
         "stable": {
-            "chat": "gemini-2.5-flash",
-            "report": "gemini-2.5-pro",
-            "sentiment": "gemini-2.5-flash",
-            "agent": "gemini-2.5-flash",
+            "chat": "gemini-3.5-flash",
+            "report": "gemini-3.5-flash",
+            "sentiment": "gemini-3.5-flash",
+            "agent": "gemini-3.5-flash",
+        },
+        "cost": {
+            "chat": "gemini-3.1-flash-lite",
+            "report": "gemini-3.1-flash-lite",
+            "sentiment": "gemini-3.1-flash-lite",
+            "agent": "gemini-3.1-flash-lite",
         },
         "preview": {
-            "chat": "gemini-3-flash",
-            "report": "gemini-3-pro",
-            "sentiment": "gemini-3-flash",
-            "agent": "gemini-3-flash",
+            "chat": "gemini-3.5-flash",
+            "report": "gemini-3.1-pro-preview",
+            "sentiment": "gemini-3.5-flash",
+            "agent": "gemini-3.5-flash",
         },
     }
 
@@ -67,6 +73,7 @@ class AIConfig:
         "crypto": "ADK_CRYPTO_INSTRUCTION",
         "osint": "ADK_OSINT_INSTRUCTION",
         "memory": "ADK_MEMORY_INSTRUCTION",
+        "mongodb_mcp": "ADK_MONGODB_MCP_INSTRUCTION",
         "orchestrator": "ADK_ORCHESTRATOR_INSTRUCTION",
     }
 
@@ -74,6 +81,7 @@ class AIConfig:
     # MongoDB Configuration
     # ============================================
     MONGODB_ENABLED = _get_bool_env("MONGODB_ENABLED", True)
+    MONGODB_MCP_ENABLED = _get_bool_env("MONGODB_MCP_ENABLED", True)
     MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING", "")
     MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "vartovii")
 
@@ -113,8 +121,8 @@ class AIConfig:
         Return primary→fallback→ultimate chain for resilient generation.
 
         Three-tier fallback ensures zero user-visible failures:
-          1. Primary model (e.g., gemini-2.5-flash)
-          2. Task-specific fallback (e.g., gemini-2.5-flash for reports)
+          1. Primary model (e.g., gemini-3.5-flash)
+          2. Task-specific fallback (e.g., gemini-3.5-flash for reports)
           3. Ultimate fallback (gemini-2.0-flash — always available)
         """
         primary = cls.get_model_for_task(task)

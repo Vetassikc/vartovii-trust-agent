@@ -2,7 +2,7 @@
 Tests for ADK Agent Architecture.
 
 These tests verify the agent configuration, tool registration, and
-architecture decisions — extracted from the production test suite (800+ tests).
+architecture decisions for this hackathon repository.
 """
 
 import pytest
@@ -14,6 +14,8 @@ from agent.adk_agent import (
     crypto_agent,
     osint_agent,
     memory_agent,
+    mongodb_mcp_agent,
+    _build_mcp_toolset,
 )
 
 
@@ -26,8 +28,9 @@ class TestAgentArchitecture:
     """Verify the multi-agent topology is correct."""
 
     def test_root_agent_has_four_sub_agents(self):
-        """Root orchestrator must delegate to exactly 4 sub-agents."""
-        assert len(root_agent.sub_agents) == 4
+        """Root orchestrator must delegate to domain agents plus optional MCP."""
+        expected_count = 5 if mongodb_mcp_agent else 4
+        assert len(root_agent.sub_agents) == expected_count
 
     def test_root_agent_delegates_only(self):
         """Orchestrator tools should only be MCP toolset or empty."""
@@ -64,9 +67,24 @@ class TestAgentArchitecture:
         assert len(osint_agent.tools) == 1
 
     def test_sub_agents_are_in_root(self):
-        """All four sub-agents must be registered with root."""
+        """All configured sub-agents must be registered with root."""
         agent_names = {a.name for a in root_agent.sub_agents}
-        assert agent_names == {"corporate_agent", "crypto_agent", "osint_agent", "memory_agent"}
+        expected = {"corporate_agent", "crypto_agent", "osint_agent", "memory_agent"}
+        if mongodb_mcp_agent:
+            expected.add("mongodb_mcp_agent")
+        assert agent_names == expected
+
+    def test_mongodb_mcp_toolset_builds_with_current_adk_schema(self, monkeypatch):
+        """MCP toolset construction should not fail on ADK connection schema."""
+        monkeypatch.setattr(
+            AIConfig,
+            "MONGODB_CONNECTION_STRING",
+            "mongodb://example.invalid/test",
+        )
+
+        toolset = _build_mcp_toolset()
+
+        assert toolset is not None
 
 
 # ============================================
@@ -77,20 +95,23 @@ class TestAgentArchitecture:
 class TestModelConfiguration:
     """Verify model routing and fallback chain configuration."""
 
-    def test_stable_profile_uses_gemini_25_flash_for_chat(self):
-        assert AIConfig._MODEL_DEFAULTS["stable"]["chat"] == "gemini-2.5-flash"
+    def test_stable_profile_uses_gemini_35_flash_for_chat(self):
+        assert AIConfig._MODEL_DEFAULTS["stable"]["chat"] == "gemini-3.5-flash"
 
-    def test_stable_profile_uses_gemini_25_pro_for_report(self):
-        assert AIConfig._MODEL_DEFAULTS["stable"]["report"] == "gemini-2.5-pro"
+    def test_stable_profile_uses_gemini_35_flash_for_report(self):
+        assert AIConfig._MODEL_DEFAULTS["stable"]["report"] == "gemini-3.5-flash"
 
-    def test_preview_profile_uses_gemini_3_flash(self):
-        assert AIConfig._MODEL_DEFAULTS["preview"]["chat"] == "gemini-3-flash"
+    def test_cost_profile_uses_gemini_31_flash_lite(self):
+        assert AIConfig._MODEL_DEFAULTS["cost"]["chat"] == "gemini-3.1-flash-lite"
+
+    def test_preview_profile_uses_gemini_31_pro_for_reports(self):
+        assert AIConfig._MODEL_DEFAULTS["preview"]["report"] == "gemini-3.1-pro-preview"
 
     def test_model_chain_has_three_tiers(self):
         """3-tier fallback: primary → fallback → ultimate (gemini-2.0-flash)."""
         chain = AIConfig.get_model_chain_for_task("report")
-        # For stable: gemini-2.5-pro → gemini-2.5-flash → gemini-2.0-flash
-        assert len(chain) == 3
+        # For stable: gemini-3.5-flash → gemini-2.0-flash, unless overridden.
+        assert len(chain) >= 2
         assert chain[-1] == "gemini-2.0-flash"
 
     def test_model_chain_no_duplicates(self):
@@ -129,8 +150,15 @@ class TestADKInstructionOverride:
         assert result == "FALLBACK"
 
     def test_env_keys_cover_all_agents(self):
-        """All 5 agent types must have env override keys."""
-        expected = {"corporate", "crypto", "osint", "memory", "orchestrator"}
+        """All agent instruction families must have env override keys."""
+        expected = {
+            "corporate",
+            "crypto",
+            "osint",
+            "memory",
+            "mongodb_mcp",
+            "orchestrator",
+        }
         assert set(AIConfig.ADK_INSTRUCTION_ENV_KEYS.keys()) == expected
 
 

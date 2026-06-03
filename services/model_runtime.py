@@ -73,8 +73,8 @@ class ChatModelRuntime:
         Generate text response using the 3-tier fallback chain.
         
         Fallback order:
-          1. Primary Task Model (e.g. gemini-2.5-flash / gemini-2.5-pro)
-          2. Task-specific Fallback (e.g. gemini-2.5-flash)
+          1. Primary Task Model (e.g. gemini-3.5-flash / gemini-3.1-pro-preview)
+          2. Task-specific Fallback (e.g. gemini-3.5-flash)
           3. Ultimate Fallback (gemini-2.0-flash — always available)
         """
         model_chain = AIConfig.get_model_chain_for_task(task)
@@ -150,14 +150,14 @@ class ChatModelRuntime:
 
         # Mock object for return
         class MockGroundedResponse:
-            text = "[Mock Grounded Response] Found live references to Vartovii production rollouts on Google Cloud."
+            text = "[Mock Grounded Response] Found references to Vartovii Trust Agent deployment evidence."
             grounding_metadata = type('MockMetadata', (), {
-                'search_entry_point': type('MockEntry', (), {'rendered_content': 'Vartovii production status'})(),
+                'search_entry_point': type('MockEntry', (), {'rendered_content': 'Vartovii Trust Agent deployment evidence'})(),
                 'grounding_chunks': [
                     type('MockChunk', (), {
                         'web': type('MockWeb', (), {
-                            'title': 'Sentry Analytics Live Status',
-                            'uri': 'https://sentryanalytic.com'
+                            'title': 'Vartovii Trust Agent Repository',
+                            'uri': 'https://github.com/Vetassikc/vartovii-trust-agent'
                         })()
                     })()
                 ]

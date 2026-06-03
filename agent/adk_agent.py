@@ -6,6 +6,7 @@ Root Orchestrator delegates to specialized sub-agents:
   • Crypto Agent — crypto intelligence + on-chain forensics
   • OSINT Agent — real-time web research via Google Search Grounding
   • Memory Agent — investigation persistence + audit trail (MongoDB)
+  • MongoDB MCP Agent — optional direct Atlas queries through MCP
 
 MongoDB MCP Server integration provides direct database access to all agents,
 enabling real-time data queries, investigation persistence, and audit logging.
@@ -25,10 +26,12 @@ import logging
 import os
 
 from google.adk.agents import LlmAgent
+from google.adk.apps import App
 from google.adk.tools import FunctionTool
 from google.adk.tools.google_search_tool import GoogleSearchTool
 
 try:
+    from mcp import StdioServerParameters
     from google.adk.tools.mcp_tool.mcp_toolset import McpToolset, StdioConnectionParams
     MCP_AVAILABLE = True
 except ImportError:
@@ -109,6 +112,10 @@ def _build_mcp_toolset():
         logger.warning("⚠️ McpToolset not available — MCP integration disabled")
         return None
 
+    if not AIConfig.MONGODB_MCP_ENABLED:
+        logger.info("ℹ️ MongoDB MCP Server skipped — MONGODB_MCP_ENABLED=false")
+        return None
+
     conn_string = AIConfig.MONGODB_CONNECTION_STRING
     if not conn_string or conn_string == "your_mongodb_connection_string_here":
         logger.info("ℹ️ MongoDB MCP Server skipped — no connection string configured")
@@ -117,12 +124,15 @@ def _build_mcp_toolset():
     try:
         toolset = McpToolset(
             connection_params=StdioConnectionParams(
-                command="npx",
-                args=["-y", "mongodb-mcp-server"],
-                env={
-                    "MONGODB_CONNECTION_STRING": conn_string,
-                    "PATH": os.environ.get("PATH", ""),
-                },
+                server_params=StdioServerParameters(
+                    command="npx",
+                    args=["-y", "mongodb-mcp-server"],
+                    env={
+                        "MONGODB_CONNECTION_STRING": conn_string,
+                        "PATH": os.environ.get("PATH", ""),
+                    },
+                ),
+                timeout=10.0,
             ),
         )
         logger.info("🔌 MongoDB MCP Server toolset initialized")
@@ -152,6 +162,19 @@ Your responsibilities:
 
 Always save investigations with accurate entity_name, entity_type ("company" or "crypto"),
 trust_score, risk_level, and a clear summary of findings.
+"""
+
+MONGODB_MCP_AGENT_INSTRUCTION = """You are the MongoDB MCP specialist for Vartovii Trust Intelligence.
+
+Your job is to answer database exploration questions by using the MongoDB MCP
+server tools against the configured Atlas database. Use this agent when the user
+asks for raw collection inspection, aggregation, explain plans, schema checks,
+or cross-collection evidence that is not covered by the structured domain tools.
+
+Prefer read-only operations such as listing collections, finding documents,
+running aggregations, and explaining query plans. Do not modify or delete data
+unless the user explicitly asks for a write operation and the runtime requests
+confirmation.
 """
 
 
@@ -296,28 +319,56 @@ memory_agent = LlmAgent(
     ],
 )
 
+# ============ Optional Sub-Agent: MongoDB MCP ============
+
+mongodb_mcp_agent = None
+if mongo_mcp_toolset:
+    mongodb_mcp_agent = LlmAgent(
+        name="mongodb_mcp_agent",
+        model=AIConfig.ADK_MODEL,
+        description=(
+            "Direct MongoDB Atlas access through the official MongoDB MCP "
+            "server. Use this agent for ad-hoc collection inspection, "
+            "aggregations, explain plans, and schema-oriented database checks."
+        ),
+        instruction=AIConfig.get_adk_instruction(
+            "mongodb_mcp", MONGODB_MCP_AGENT_INSTRUCTION
+        ),
+        tools=[mongo_mcp_toolset],
+    )
+    logger.info("🍃 MongoDB MCP Agent enabled")
+else:
+    logger.info("🍃 MongoDB MCP Agent disabled — MCP toolset unavailable")
+
 # ============ Root Orchestrator ============
 
-# Build orchestrator tools list
-# Note: MCP toolset is disabled on orchestrator to avoid Vertex AI conflict
-# between GoogleSearchTool (OSINT sub-agent) and FunctionTools.
-# MongoDB access is handled via FunctionTool in corporate/crypto agents.
+# Keep the root agent a pure orchestrator. MongoDB MCP access lives behind a
+# dedicated specialist so the root can continue to route instead of answering
+# directly or exposing raw database tools on every turn.
 orchestrator_tools = []
+root_sub_agents = [corporate_agent, crypto_agent, osint_agent, memory_agent]
+if mongodb_mcp_agent:
+    root_sub_agents.append(mongodb_mcp_agent)
 
 root_agent = LlmAgent(
     name="vartovii_orchestrator",
     model=AIConfig.ADK_MODEL,
     description="Vartovii AI — Trust Intelligence Platform assistant",
     instruction=AIConfig.get_adk_instruction("orchestrator", ORCHESTRATOR_AGENT_INSTRUCTION),
-    sub_agents=[corporate_agent, crypto_agent, osint_agent, memory_agent],
+    sub_agents=root_sub_agents,
     tools=orchestrator_tools,
 )
 
+# Agent Engine deploys the exported App object to keep the hosted ADK app name
+# stable and valid instead of letting the platform infer it from a resource ID.
+app = App(name="vartovii_trust_agent", root_agent=root_agent)
+
 # Log initialization summary
-tool_count = sum([10, 10, 1, 7])  # corporate + crypto + osint + memory
 mcp_status = "MongoDB MCP ✅" if mongo_mcp_toolset else "MongoDB MCP ❌ (no connection string)"
 logger.info(
-    "🤖 Vartovii ADK Agent initialized: root + 4 sub-agents "
-    "(corporate: 10, crypto: 10, osint: 1, memory: 7 tools) | %s",
+    "🤖 Vartovii ADK Agent initialized: root + %d sub-agents "
+    "(corporate: 10, crypto: 10, osint: 1, memory: 7, mongodb_mcp: %s) | %s",
+    len(root_sub_agents),
+    "enabled" if mongodb_mcp_agent else "disabled",
     mcp_status,
 )

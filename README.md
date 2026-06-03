@@ -1,17 +1,17 @@
 <p align="center">
   <h1 align="center">🛡️ Vartovii Trust Intelligence Agent</h1>
   <p align="center">
-    <strong>Autonomous multi-agent trust intelligence system that detects fraud and verifies trustworthiness of companies and crypto projects — powered by Gemini 3, Google ADK, and MongoDB Atlas via MCP.</strong>
+    <strong>Autonomous multi-agent trust intelligence system that detects fraud and verifies trustworthiness of companies and crypto projects — powered by Vertex AI Gemini, Google ADK, and MongoDB Atlas via MCP.</strong>
   </p>
 </p>
 
 <p align="center">
   <a href="https://adk.dev"><img src="https://img.shields.io/badge/Google_ADK-1.27.3-4285F4?logo=google&logoColor=white" alt="Google ADK"></a>
-  <a href="https://ai.google.dev"><img src="https://img.shields.io/badge/Gemini_3-Flash%20%7C%20Pro-8E75B2?logo=google&logoColor=white" alt="Gemini 3"></a>
+  <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-5-flash"><img src="https://img.shields.io/badge/Vertex_AI-Gemini_3.5_Flash-8E75B2?logo=google&logoColor=white" alt="Vertex AI Gemini"></a>
   <a href="https://www.mongodb.com/atlas"><img src="https://img.shields.io/badge/MongoDB_Atlas-MCP_Server-47A248?logo=mongodb&logoColor=white" alt="MongoDB Atlas"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Protocol-FF6F00?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiPuKalDwvdGV4dD48L3N2Zz4=&logoColor=white" alt="MCP"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
-  <a href="#testing"><img src="https://img.shields.io/badge/Tests-46%2B_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/Tests-56_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
 </p>
 
 ---
@@ -36,13 +36,14 @@ graph TB
     User([🧑 User Query]) --> Orchestrator
 
     subgraph "Vartovii ADK Multi-Agent System"
-        Orchestrator["🎯 Orchestrator Agent<br/>Gemini 3 Flash<br/><i>Pure delegation — never answers directly</i>"]
+        Orchestrator["🎯 Orchestrator Agent<br/>Gemini 3.5 Flash<br/><i>Pure delegation — never answers directly</i>"]
 
         Orchestrator -->|"Company questions"| Corporate["🏢 Corporate Agent<br/>6 FunctionTools"]
         Orchestrator -->|"Crypto questions"| Crypto["🪙 Crypto Agent<br/>6 FunctionTools"]
         Orchestrator -->|"Web research"| OSINT["🔍 OSINT Agent<br/>GoogleSearchTool"]
         Orchestrator -->|"Save & recall"| Memory["🧠 Memory Agent<br/>4 FunctionTools"]
-        Orchestrator -.->|"Direct DB access"| MCP["🔌 MongoDB MCP Server"]
+        Orchestrator -->|"Ad-hoc DB questions"| MCPAgent["🍃 MongoDB MCP Agent<br/>(optional)"]
+        MCPAgent --> MCP["🔌 MongoDB MCP Server"]
     end
 
     Corporate --> DB[(MongoDB Atlas)]
@@ -80,7 +81,7 @@ graph TB
     style DB fill:#47A248,stroke:#3d8b3d,color:#fff
 ```
 
-**5 agents, 17 tools, 1 MCP server** — orchestrated by Google ADK for autonomous trust intelligence.
+**5 core agents, 28 custom tools, and an optional MongoDB MCP specialist** — orchestrated by Google ADK for autonomous trust intelligence.
 
 ---
 
@@ -89,13 +90,13 @@ graph TB
 | Feature | Description |
 |---------|-------------|
 | 🤖 **Multi-Agent Orchestration** | 5 specialized `LlmAgent`s coordinated via Google ADK — each with its own tools, context, and domain expertise |
-| 🍃 **MongoDB Atlas via MCP** | Official `mongodb-mcp-server` gives agents direct database access (find, aggregate, explain) alongside custom PyMongo tools |
-| 🔄 **3-Tier Model Fallback** | Gemini 3 → Gemini 2.5 → Gemini 2.0 Flash — zero user-visible failures |
+| 🍃 **MongoDB Atlas + MCP** | Structured PyMongo tools handle production workflows; the optional `mongodb-mcp-server` specialist handles ad-hoc collection inspection, aggregation, and explain-plan work |
+| 🔄 **Model Fallback** | Production uses Vertex AI Gemini 3.5 Flash GA with a 3.1 Flash-Lite cost profile and explicit 3.1 Pro preview opt-in |
 | 🧠 **Investigation Memory** | Cross-session persistence: agents save & recall past investigations via MongoDB |
 | 📋 **Full Audit Trail** | Every agent action logged for compliance — who did what, when, which model, latency |
 | 🔍 **OSINT Grounding** | Real-time web research via Google Search Grounding for entities not in database |
-| 📊 **17 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, investigation management |
-| 🧪 **46+ Automated Tests** | Architecture validation, tool contracts, MongoDB integration, service layer coverage |
+| 📊 **28 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, similarity search, network risk, investigation management |
+| 🧪 **56 Automated Tests** | Architecture validation, MCP construction, tool contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
 
 ---
 
@@ -147,6 +148,27 @@ adk web agent/
 python -m demo.run_demo
 ```
 
+### Deploy
+
+```bash
+# Web console + FastAPI + MongoDB MCP child process
+./scripts/deploy.sh
+
+# ADK agent graph on Google Cloud Agent Engine
+GOOGLE_CLOUD_PROJECT=your-project ./scripts/deploy_agent_engine.sh
+```
+
+Cloud Run is the primary hosted product demo because the container includes the
+dashboard API, static web console, and Node.js runtime for `mongodb-mcp-server`.
+Agent Engine deployment proves the ADK agent graph is ready for Google Cloud's
+hosted agent runtime; set `MONGODB_MCP_ENABLED=true` only in runtimes where the
+MongoDB MCP child process is available.
+
+The Agent Engine deploy helper uses a temporary sanitized env file by default:
+it keeps MCP disabled and uses mock data fallback so the hosted graph can be
+deployed without copying local secrets. The Cloud Run deployment remains the
+live MongoDB + MCP product surface.
+
 ---
 
 ## 🍃 MongoDB MCP Integration
@@ -170,17 +192,20 @@ result = collection.find({"name": {"$regex": query, "$options": "i"}})
 The official [`mongodb-mcp-server`](https://github.com/mongodb-js/mongodb-mcp-server) runs as a subprocess, exposing MongoDB operations via the Model Context Protocol:
 
 ```python
-# Initialized in agent/adk_agent.py
+# Initialized in agent/adk_agent.py as an optional MongoDB MCP specialist
 toolset = McpToolset(
     connection_params=StdioConnectionParams(
-        command="npx",
-        args=["-y", "mongodb-mcp-server"],
-        env={"MONGODB_CONNECTION_STRING": conn_string},
+        server_params=StdioServerParameters(
+            command="npx",
+            args=["-y", "mongodb-mcp-server"],
+            env={"MONGODB_CONNECTION_STRING": conn_string},
+        ),
+        timeout=10.0,
     ),
 )
 ```
 
-This gives the Orchestrator agent **direct, flexible database access** — it can run arbitrary finds, aggregations, and explain plans without needing a pre-built tool for every query pattern.
+This gives the ADK graph **direct, flexible database access** through a dedicated MCP specialist — it can run ad-hoc finds, aggregations, and explain plans without needing a pre-built tool for every query pattern.
 
 ### MongoDB Collections
 
@@ -199,14 +224,14 @@ This gives the Orchestrator agent **direct, flexible database access** — it ca
 | Layer | Technology |
 |-------|------------|
 | **AI Framework** | [Google Agent Development Kit (ADK)](https://adk.dev) 1.27.3 |
-| **Models** | Gemini 3 Flash, Gemini 3 Pro, Gemini 2.5 Flash (fallback) |
+| **Models** | Vertex AI Gemini 3.5 Flash GA; Gemini 3.1 Flash-Lite cost profile; Gemini 3.1 Pro preview opt-in |
 | **Database** | [MongoDB Atlas](https://www.mongodb.com/atlas) — cloud-hosted document database |
 | **MCP Server** | [`mongodb-mcp-server`](https://github.com/mongodb-js/mongodb-mcp-server) — official MongoDB MCP integration |
 | **Driver** | [PyMongo](https://pymongo.readthedocs.io/) 4.7+ with connection pooling & retry |
 | **Language** | Python 3.11+ |
 | **Search** | Google Search Grounding (OSINT agent) |
 | **Testing** | pytest 8.0+, pytest-asyncio |
-| **Deployment** | Google Cloud Run + MongoDB Atlas (M0 free tier compatible) |
+| **Deployment** | Google Cloud Run web demo + ADK Agent Engine deployment path + MongoDB Atlas |
 
 ---
 
@@ -216,8 +241,9 @@ This gives the Orchestrator agent **direct, flexible database access** — it ca
 vartovii-trust-agent/
 ├── agent/                          # Core ADK agent definitions
 │   ├── __init__.py                 # Package init (exports root_agent)
-│   ├── agent.py                    # ADK entry point
+│   ├── agent.py                    # ADK entry point (symlink to adk_agent.py)
 │   ├── adk_agent.py                # Root orchestrator + 4 sub-agents + MCP
+│   ├── requirements.txt            # Agent Engine packaging dependencies
 │   ├── config.py                   # Model routing, fallback chains, MongoDB config
 │   ├── prompts/
 │   │   └── adk.py                  # Agent instruction prompts
@@ -232,9 +258,12 @@ vartovii-trust-agent/
 │   ├── routing_adapter.py          # Chat routing adapter
 │   └── telemetry.py                # Metrics and monitoring
 ├── scripts/
+│   ├── deploy.sh                   # Cloud Run web demo deploy
+│   ├── deploy_agent_engine.sh      # ADK Agent Engine deploy
 │   └── seed_mongodb.py             # Seed MongoDB Atlas with demo data
 ├── tests/
-│   ├── test_agent.py               # 33 agent architecture & tool tests
+│   ├── test_agent.py               # 35 agent architecture & tool tests
+│   ├── test_dashboard_api.py       # 6 dashboard fallback/readiness contract tests
 │   └── test_services.py            # 13 service layer tests
 ├── demo/
 │   └── run_demo.py                 # Interactive demo runner (5 scenarios)
@@ -246,6 +275,11 @@ vartovii-trust-agent/
 │   ├── optimization_metrics.md     # Before/after metrics
 │   ├── production_rollout_report.md
 │   └── screenshots/
+├── AGENTS.md                       # Repository rules for coding agents
+├── AGENT_ROLE_MAPPING.md           # Agent ownership, tools, and handoff rules
+├── MODEL_POLICY.md                  # Model routing, fallback, and preview policy
+├── PROJECT_CONTEXT.md              # Product context and judging narrative
+├── SOURCE_UPDATE_POLICY.md         # Evidence freshness and source governance
 ├── pyproject.toml                  # Project config & dependencies
 ├── .env.example                    # Environment variable template
 ├── ARCHITECTURE.md                 # Detailed technical architecture
@@ -269,13 +303,14 @@ pytest tests/ -v --tb=short
 
 | Test Suite | Tests | Coverage |
 |-----------|-------|----------|
-| `test_agent.py` | 33 | Agent topology, tool registration, MCP integration, fallback chains |
+| `test_agent.py` | 36 | Agent topology, tool registration, MCP integration, fallback chains |
+| `test_dashboard_api.py` | 7 | Dashboard mock fallback, readiness endpoint, health model metadata, leaderboard and entity detail contracts |
 | `test_services.py` | 13 | Model runtime, routing adapter, telemetry, config validation |
-| **Total** | **46** | Architecture, tools, MongoDB, services |
+| **Total** | **56** | Architecture, tools, dashboard API, MongoDB fallback/readiness, services |
 
 Key test categories:
 - ✅ **Agent architecture** — verifies 5-agent topology, correct tool assignment
-- ✅ **Tool contracts** — validates all 17 tools return expected schemas
+- ✅ **Tool contracts** — validates custom tools and dashboard API contracts return expected schemas
 - ✅ **MongoDB integration** — connection manager, collection access, graceful fallback
 - ✅ **Model fallback chain** — 3-tier cascade, profile switching
 - ✅ **MCP toolset** — initialization, error handling, connection params
@@ -325,13 +360,14 @@ Key test categories:
 ### 3-Tier Fallback Chain
 
 ```
-Primary (Gemini 3)  ──on error──▶  Fallback (Gemini 2.5)  ──on error──▶  Ultimate (Gemini 2.0 Flash)
+Primary (Gemini 3.5 Flash)  ──on error──▶  Ultimate (Gemini 2.0 Flash)
 ```
 
 | Profile | Agent Model | Chat Model | Report Model |
 |---------|-------------|------------|--------------|
-| **preview** (default) | `gemini-3-flash` | `gemini-3-flash` | `gemini-3-pro` |
-| **stable** | `gemini-2.5-flash` | `gemini-2.5-flash` | `gemini-2.5-pro` |
+| **stable** | `gemini-3.5-flash` | `gemini-3.5-flash` | `gemini-3.5-flash` |
+| **cost** | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` |
+| **preview** | `gemini-3.5-flash` | `gemini-3.5-flash` | `gemini-3.1-pro-preview` |
 
 All models are environment-overridable. The 3-tier fallback ensures **zero user-visible failures**.
 
@@ -345,5 +381,5 @@ All models are environment-overridable. The 3-tier fallback ensures **zero user-
 
 <p align="center">
   <strong>🏆 Built for Google Cloud Rapid Agent Hackathon — MongoDB Track</strong><br/>
-  <em>Autonomous multi-agent trust intelligence powered by Gemini 3, Google ADK, and MongoDB Atlas via MCP</em>
+  <em>Autonomous multi-agent trust intelligence powered by Vertex AI Gemini, Google ADK, and MongoDB Atlas via MCP</em>
 </p>

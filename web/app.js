@@ -13,6 +13,7 @@
         leaderboard:    '/api/leaderboard',
         investigations: '/api/investigations',
         audit:          '/api/audit',
+        readiness:      '/api/readiness',
         chat:           '/api/chat',
         entityCompany:  '/api/entity/company/',
         entityCrypto:   '/api/entity/crypto/',
@@ -139,10 +140,10 @@
 
     // ─── Utility: Trust score → color ───
     function trustColor(score) {
-        if (score >= 70) return '#34a853';
-        if (score >= 50) return '#fbbc04';
-        if (score >= 30) return '#ea8600';
-        return '#ea4335';
+        if (score >= 70) return '#70b783';
+        if (score >= 50) return '#d6b56d';
+        if (score >= 30) return '#c7864b';
+        return '#d46a59';
     }
 
     // ─── Utility: Trust score → value class ───
@@ -173,13 +174,36 @@
         const statusEl = $('#api-status');
         const dotEl = statusEl.querySelector('.status-dot');
         const labelEl = statusEl.querySelector('.status-label');
+        const sourcePill = $('#data-source-pill');
         try {
             const data = await apiFetch(API.health);
-            dotEl.className = 'status-dot status-dot--live';
-            labelEl.textContent = 'LIVE';
+            if (data.mongodb) {
+                dotEl.className = 'status-dot status-dot--live';
+                labelEl.textContent = 'LIVE';
+                if (sourcePill) sourcePill.textContent = 'MongoDB live';
+            } else {
+                dotEl.className = 'status-dot status-dot--warning';
+                labelEl.textContent = 'DEMO DATA';
+                if (sourcePill) sourcePill.textContent = 'Mock fallback';
+            }
         } catch {
             dotEl.className = 'status-dot status-dot--error';
             labelEl.textContent = 'OFFLINE';
+            if (sourcePill) sourcePill.textContent = 'Offline';
+        }
+    }
+
+    async function loadReadiness() {
+        try {
+            const data = await apiFetch(API.readiness);
+            const sourcePill = $('#data-source-pill');
+            if (sourcePill && data.quality?.data_source) {
+                sourcePill.textContent = data.quality.data_source === 'mongodb'
+                    ? 'MongoDB live'
+                    : 'Mock fallback';
+            }
+        } catch (err) {
+            console.warn('Readiness load failed:', err);
         }
     }
 
@@ -213,19 +237,19 @@
                 $('#risk-medium').style.width = pct(rd.MEDIUM || 0);
                 $('#risk-low').style.width = pct(rd.LOW || 0);
 
-                $('#risk-critical').querySelector('.risk-bar__tooltip').textContent = `CRITICAL: ${rd.CRITICAL || 0}`;
-                $('#risk-high').querySelector('.risk-bar__tooltip').textContent = `HIGH: ${rd.HIGH || 0}`;
-                $('#risk-medium').querySelector('.risk-bar__tooltip').textContent = `MEDIUM: ${rd.MEDIUM || 0}`;
-                $('#risk-low').querySelector('.risk-bar__tooltip').textContent = `LOW: ${rd.LOW || 0}`;
+                $('#risk-critical').querySelector('.riskmeter__tooltip').textContent = `CRITICAL: ${rd.CRITICAL || 0}`;
+                $('#risk-high').querySelector('.riskmeter__tooltip').textContent = `HIGH: ${rd.HIGH || 0}`;
+                $('#risk-medium').querySelector('.riskmeter__tooltip').textContent = `MEDIUM: ${rd.MEDIUM || 0}`;
+                $('#risk-low').querySelector('.riskmeter__tooltip').textContent = `LOW: ${rd.LOW || 0}`;
             }
 
             // Risk legend
             const legend = $('#risk-legend');
             legend.innerHTML = [
-                { label: `Critical (${rd.CRITICAL || 0})`, color: '#ea4335' },
-                { label: `High (${rd.HIGH || 0})`, color: '#ea8600' },
-                { label: `Medium (${rd.MEDIUM || 0})`, color: '#fbbc04' },
-                { label: `Low (${rd.LOW || 0})`, color: '#34a853' },
+                { label: `Critical (${rd.CRITICAL || 0})`, color: '#d46a59' },
+                { label: `High (${rd.HIGH || 0})`, color: '#c7864b' },
+                { label: `Medium (${rd.MEDIUM || 0})`, color: '#d6b56d' },
+                { label: `Low (${rd.LOW || 0})`, color: '#70b783' },
             ].map(i => `<span class="risk-legend__item"><span class="risk-legend__dot" style="background:${i.color}"></span>${i.label}</span>`).join('');
 
             // Risk distribution cards
@@ -240,6 +264,12 @@
                 $('#risk-fill-high').style.width = ((rd.HIGH || 0) / total * 100) + '%';
                 $('#risk-fill-medium').style.width = ((rd.MEDIUM || 0) / total * 100) + '%';
                 $('#risk-fill-low').style.width = ((rd.LOW || 0) / total * 100) + '%';
+            }
+
+            const lastSync = $('#last-sync-label');
+            if (lastSync) {
+                const source = data.source === 'mongodb' ? 'MongoDB' : 'demo data';
+                lastSync.textContent = `${source} · synced ${formatTime(new Date().toISOString())}`;
             }
 
         } catch (err) {
@@ -261,7 +291,7 @@
 
         const avatar = document.createElement('div');
         avatar.className = 'chat-msg__avatar';
-        avatar.textContent = role === 'user' ? '👤' : '🤖';
+        avatar.textContent = role === 'user' ? 'U' : 'AI';
 
         const bubble = document.createElement('div');
         bubble.className = 'chat-msg__bubble';
@@ -413,7 +443,9 @@
                 else if (rank === 2) rankCls = 'rank-badge--2';
                 else if (rank === 3) rankCls = 'rank-badge--3';
 
-                const slug = item.slug || name.toLowerCase().replace(/\s+/g, '-');
+                const slug = type === 'companies'
+                    ? (item.profile_slug || item.slug || name.toLowerCase().replace(/\s+/g, '-'))
+                    : (item.slug || name.toLowerCase().replace(/\s+/g, '-'));
 
                 return `
                     <tr data-type="${type}" data-slug="${slug}">
@@ -497,10 +529,32 @@
 
         try {
             const data = await apiFetch(url);
-            body.innerHTML = renderEntityDetail(data, type);
+            body.innerHTML = renderEntityDetail(data.entity || data, data.entity_type || type);
         } catch (err) {
             body.innerHTML = `<p style="color:var(--text-muted)">Could not load entity details. ${err.message}</p>`;
         }
+    }
+
+    function renderReview(review) {
+        if (typeof review === 'string') return escapeHtml(review);
+
+        const title = review.title || review.summary || review.text || 'Review';
+        const meta = [
+            review.source,
+            review.rating != null ? `${review.rating}/5` : null,
+            review.sentiment,
+            review.date,
+        ].filter(Boolean).map(value => escapeHtml(String(value))).join(' · ');
+
+        const body = review.text && review.text !== title
+            ? `<div style="margin-top:0.25rem;color:var(--text-secondary)">${escapeHtml(review.text)}</div>`
+            : '';
+
+        return `
+            <div style="font-weight:600;color:var(--text-primary)">${escapeHtml(title)}</div>
+            ${meta ? `<div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.15rem">${meta}</div>` : ''}
+            ${body}
+        `;
     }
 
     function renderEntityDetail(data, type) {
@@ -535,7 +589,7 @@
                 <div style="max-height:200px;overflow-y:auto;margin-top:0.5rem">
                     ${data.reviews.slice(0, 5).map(r => `
                         <div style="padding:0.5rem;background:rgba(255,255,255,0.02);border-radius:8px;margin-bottom:0.4rem;font-size:0.78rem;color:var(--text-secondary)">
-                            ${escapeHtml(typeof r === 'string' ? r : (r.text || r.summary || JSON.stringify(r)))}
+                            ${renderReview(r)}
                         </div>
                     `).join('')}
                 </div>
@@ -580,7 +634,7 @@
             timeline.innerHTML = items.map(inv => {
                 const risk = inv.risk_level || 'UNKNOWN';
                 const riskCls = riskClass(risk);
-                const typeIcon = (inv.entity_type || '').toLowerCase().includes('crypto') ? '🪙' : '🏢';
+                const typeIcon = (inv.entity_type || '').toLowerCase().includes('crypto') ? 'CR' : 'CO';
                 const score = Math.round(inv.trust_score || 0);
                 const color = trustColor(score);
 
@@ -636,15 +690,16 @@
         }
     }
 
-    function getAgentIcon(agent) {
-        if (!agent) return '⚙️';
+function getAgentIcon(agent) {
+        if (!agent) return 'SYS';
         const a = agent.toLowerCase();
-        if (a.includes('orchestrat')) return '🎯';
-        if (a.includes('corporate') || a.includes('corp')) return '🏢';
-        if (a.includes('crypto')) return '🪙';
-        if (a.includes('osint')) return '🔍';
-        if (a.includes('memory')) return '🧠';
-        return '⚙️';
+        if (a.includes('orchestrat')) return 'OR';
+        if (a.includes('corporate') || a.includes('corp')) return 'CO';
+        if (a.includes('crypto')) return 'CR';
+        if (a.includes('osint')) return 'OS';
+        if (a.includes('memory')) return 'ME';
+        if (a.includes('mcp')) return 'MC';
+        return 'SYS';
     }
 
     // ════════════════════════════════════════════════════════════
@@ -692,6 +747,7 @@
     function init() {
         // Initial data loads
         checkHealth();
+        loadReadiness();
         loadStats();
         loadLeaderboard();
         loadInvestigations();

@@ -1,6 +1,6 @@
 # 🛡️ Vartovii Trust Intelligence Agent — Architecture
 
-> Technical architecture document for the **Vartovii Trust Intelligence Agent**, an autonomous multi-agent system for fraud detection and trust verification — built with Google ADK, Gemini 3, and MongoDB Atlas via MCP.
+> Technical architecture document for the **Vartovii Trust Intelligence Agent**, an autonomous multi-agent system for fraud detection and trust verification — built with Google ADK, Vertex AI Gemini, and MongoDB Atlas via MCP.
 >
 > **Track:** MongoDB · **Google Cloud Rapid Agent Hackathon**
 
@@ -34,7 +34,7 @@ graph TB
     end
 
     subgraph "Agent Layer (Google ADK)"
-        Orch["🎯 Orchestrator<br/>Gemini 3 Flash"]
+        Orch["🎯 Orchestrator<br/>Gemini 3.5 Flash"]
         Corp["🏢 Corporate Agent"]
         Crypt["🪙 Crypto Agent"]
         OSINT["🔍 OSINT Agent"]
@@ -46,6 +46,7 @@ graph TB
         CRT["Crypto Tools (6)"]
         GST["GoogleSearchTool"]
         IT["Investigation Tools (4)"]
+        MCPAgent["🍃 MongoDB MCP Agent<br/>(optional)"]
         MCP["MongoDB MCP Server"]
     end
 
@@ -62,7 +63,8 @@ graph TB
     Orch --> Crypt
     Orch --> OSINT
     Orch --> Mem
-    Orch -.-> MCP
+    Orch --> MCPAgent
+    MCPAgent --> MCP
 
     Corp --> CT
     Crypt --> CRT
@@ -103,20 +105,22 @@ The system deploys **5 specialized agents** defined in [`agent/adk_agent.py`](ag
 ```mermaid
 graph LR
     subgraph "Root Agent"
-        O["🎯 vartovii_orchestrator<br/>Model: gemini-3-flash<br/>Tools: MongoDB MCP (optional)<br/>Role: Pure delegation"]
+        O["🎯 vartovii_orchestrator<br/>Model: gemini-3.5-flash<br/>Tools: none<br/>Role: Pure delegation"]
     end
 
     subgraph "Sub-Agents"
-        C["🏢 corporate_agent<br/>Model: gemini-3-flash<br/>Tools: 6 FunctionTools<br/>Domain: Employer analytics"]
-        K["🪙 crypto_agent<br/>Model: gemini-3-flash<br/>Tools: 6 FunctionTools<br/>Domain: On-chain forensics"]
-        S["🔍 osint_agent<br/>Model: gemini-3-flash<br/>Tools: GoogleSearchTool<br/>Domain: Real-time web research"]
-        M["🧠 memory_agent<br/>Model: gemini-3-flash<br/>Tools: 4 FunctionTools<br/>Domain: Investigation persistence"]
+        C["🏢 corporate_agent<br/>Model: gemini-3.5-flash<br/>Tools: 10 FunctionTools<br/>Domain: Employer analytics"]
+        K["🪙 crypto_agent<br/>Model: gemini-3.5-flash<br/>Tools: 10 FunctionTools<br/>Domain: On-chain forensics"]
+        S["🔍 osint_agent<br/>Model: gemini-3.5-flash<br/>Tools: GoogleSearchTool / Vertex-safe wrapper<br/>Domain: Real-time web research"]
+        M["🧠 memory_agent<br/>Model: gemini-3.5-flash<br/>Tools: 7 FunctionTools<br/>Domain: Investigation persistence"]
+        D["🍃 mongodb_mcp_agent<br/>Model: gemini-3.5-flash<br/>Tools: MongoDB MCP Toolset<br/>Domain: Ad-hoc database inspection"]
     end
 
     O --> C
     O --> K
     O --> S
     O --> M
+    O -.-> D
 
     style O fill:#1a73e8,stroke:#1557b0,color:#fff
     style C fill:#34a853,stroke:#2d8e47,color:#fff
@@ -130,8 +134,8 @@ graph LR
 | Property | Value |
 |----------|-------|
 | **Role** | Traffic director and context manager |
-| **Model** | `gemini-3-flash` (preview) / `gemini-2.5-flash` (stable) |
-| **Tools** | MongoDB MCP Toolset (when configured) |
+| **Model** | `gemini-3.5-flash` (production GA) / `gemini-3.1-pro-preview` for explicit report opt-in |
+| **Tools** | None — raw MongoDB MCP access is delegated to `mongodb_mcp_agent` when configured |
 | **Behavior** | Analyzes user intent, evaluates conversation history, delegates to exactly one sub-agent. **Never answers directly.** |
 
 The orchestrator's system prompt explicitly forbids direct answers:
@@ -143,8 +147,8 @@ The orchestrator's system prompt explicitly forbids direct answers:
 | Property | Value |
 |----------|-------|
 | **Role** | Employer analytics — Trust Score, reviews, comparisons, vacancy intelligence |
-| **Model** | `gemini-3-flash` |
-| **Tools** | 6 `FunctionTool`s → MongoDB `companies` collection |
+| **Model** | `gemini-3.5-flash` |
+| **Tools** | 10 `FunctionTool`s → MongoDB `companies` collection |
 | **Data Sources** | Glassdoor, Kununu, Google Reviews, GitHub (aggregated in MongoDB) |
 
 ### 2.3 Crypto Agent (`crypto_agent`)
@@ -152,8 +156,8 @@ The orchestrator's system prompt explicitly forbids direct answers:
 | Property | Value |
 |----------|-------|
 | **Role** | Blockchain forensics, smart contract analysis, token distribution audits |
-| **Model** | `gemini-3-flash` |
-| **Tools** | 6 `FunctionTool`s → MongoDB `crypto_projects`, `wallets` collections |
+| **Model** | `gemini-3.5-flash` |
+| **Tools** | 10 `FunctionTool`s → MongoDB `crypto_projects`, `wallets` collections |
 | **Data Sources** | CoinGecko, Etherscan, DeFiLlama, GitHub (aggregated in MongoDB) |
 
 ### 2.4 OSINT Agent (`osint_agent`)
@@ -161,7 +165,7 @@ The orchestrator's system prompt explicitly forbids direct answers:
 | Property | Value |
 |----------|-------|
 | **Role** | Real-time web research for entities not in database |
-| **Model** | `gemini-3-flash` |
+| **Model** | `gemini-3.5-flash` |
 | **Tools** | `GoogleSearchTool` (Google Search Grounding) |
 | **Use Cases** | Founder background checks, recent news, domain verification, emerging projects |
 
@@ -170,8 +174,8 @@ The orchestrator's system prompt explicitly forbids direct answers:
 | Property | Value |
 |----------|-------|
 | **Role** | Investigation persistence and audit trail management |
-| **Model** | `gemini-3-flash` |
-| **Tools** | 4 `FunctionTool`s → MongoDB `investigations`, `audit_log` collections |
+| **Model** | `gemini-3.5-flash` |
+| **Tools** | 7 `FunctionTool`s → MongoDB `investigations`, `audit_log` collections |
 | **Capabilities** | Save investigation results, recall past analyses, log audit events, query audit trail |
 
 ---
@@ -326,7 +330,7 @@ toolset = McpToolset(
 | **Use Case** | Known query patterns (Trust Score, search) | Exploratory queries, aggregations |
 | **Availability** | Always (with fallback to mock) | Requires `npx` + npm |
 
-This dual approach gives agents **both reliability and flexibility** — structured tools handle the 90% case, while MCP handles edge cases where the orchestrator needs to run custom queries.
+This dual approach gives agents **both reliability and flexibility** — structured tools handle the 90% case, while the optional MCP specialist handles edge cases where the system needs custom queries, aggregations, or explain plans.
 
 ---
 
@@ -426,11 +430,11 @@ The fallback system ensures **zero user-visible failures** by cascading through 
 ```mermaid
 graph LR
     subgraph "Tier 1: Primary"
-        P["gemini-3-flash<br/>(Preview — latest)"]
+        P["gemini-3.5-flash<br/>(GA — latest Flash)"]
     end
 
     subgraph "Tier 2: Fallback"
-        F["gemini-2.5-flash<br/>(Stable — GA)"]
+        F["gemini-3.1-flash-lite<br/>(GA — cost mode)"]
     end
 
     subgraph "Tier 3: Ultimate"
@@ -451,8 +455,9 @@ Controlled via `GEMINI_MODEL_PROFILE` environment variable:
 
 | Profile | Agent | Chat | Report | Fallback Chain |
 |---------|-------|------|--------|---------------|
-| **preview** (default) | `gemini-3-flash` | `gemini-3-flash` | `gemini-3-pro` | → `gemini-2.5-flash` → `gemini-2.0-flash` |
-| **stable** | `gemini-2.5-flash` | `gemini-2.5-flash` | `gemini-2.5-pro` | → `gemini-2.5-flash` → `gemini-2.0-flash` |
+| **stable** | `gemini-3.5-flash` | `gemini-3.5-flash` | `gemini-3.5-flash` | → `gemini-2.0-flash` |
+| **cost** | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` | → `gemini-3.5-flash` → `gemini-2.0-flash` |
+| **preview** | `gemini-3.5-flash` | `gemini-3.5-flash` | `gemini-3.1-pro-preview` | → `gemini-3.5-flash` → `gemini-2.0-flash` |
 
 ### Fallback Logic (`config.py`)
 
@@ -486,9 +491,9 @@ Before triggering a model fallback, the system retries transient errors with exp
 
 ## 7. Tool Catalog
 
-### 17 Tools Across 4 Agents
+### 28 Custom Tools Across 4 Core Specialist Agents
 
-#### 🏢 Corporate Agent — 6 Tools
+#### 🏢 Corporate Agent — 10 Tools
 
 | Tool | Function | MongoDB Collection | Description |
 |------|----------|-------------------|-------------|
@@ -498,8 +503,12 @@ Before triggering a model fallback, the system retries transient errors with exp
 | `compare_companies` | `compare_companies(names)` | `companies` | Side-by-side comparison matrix |
 | `get_company_reviews` | `get_company_reviews(company)` | `companies` | Employee review sentiment analysis |
 | `get_vacancy_intelligence` | `get_vacancy_intelligence(company)` | `companies` | Ghost job detection, hiring health |
+| `find_similar_companies` | `find_similar_companies(company)` | `companies` | Similar risk profile discovery |
+| `get_salary_insights` | `get_salary_insights(company)` | `companies` | Compensation and salary intelligence |
+| `get_hiring_trends` | `get_hiring_trends(company)` | `companies` | Hiring velocity and demand trend analysis |
+| `get_industry_benchmark` | `get_industry_benchmark(industry)` | `companies` | Industry-level trust score benchmarking |
 
-#### 🪙 Crypto Agent — 6 Tools
+#### 🪙 Crypto Agent — 10 Tools
 
 | Tool | Function | MongoDB Collection | Description |
 |------|----------|-------------------|-------------|
@@ -509,6 +518,10 @@ Before triggering a model fallback, the system retries transient errors with exp
 | `get_transaction_history` | `get_transaction_history(address)` | `wallets` | Recent normalized transactions |
 | `get_token_holders` | `get_token_holders(project)` | `crypto_projects` | Token concentration risk analysis |
 | `get_contract_info` | `get_contract_info(address)` | `crypto_projects` | Smart contract verification, bytecode |
+| `find_similar_crypto` | `find_similar_crypto(project)` | `crypto_projects` | Similar crypto risk profile discovery |
+| `get_liquidity_analysis` | `get_liquidity_analysis(project)` | `crypto_projects` | Liquidity depth, pool, and market health analysis |
+| `get_whale_tracking` | `get_whale_tracking(project)` | `crypto_projects` | Whale wallet movement and concentration monitoring |
+| `get_defi_metrics` | `get_defi_metrics(project)` | `crypto_projects` | DeFi TVL, protocol, and market structure metrics |
 
 #### 🔍 OSINT Agent — 1 Tool
 
@@ -516,7 +529,7 @@ Before triggering a model fallback, the system retries transient errors with exp
 |------|------|-------------|
 | `GoogleSearchTool` | Native ADK Tool | Google Search Grounding — real-time web queries |
 
-#### 🧠 Memory Agent — 4 Tools
+#### 🧠 Memory Agent — 7 Tools
 
 | Tool | Function | MongoDB Collection | Description |
 |------|----------|-------------------|-------------|
@@ -524,10 +537,13 @@ Before triggering a model fallback, the system retries transient errors with exp
 | `get_investigation_history` | `get_investigation_history(entity)` | `investigations` | Recall past investigations |
 | `log_audit_event` | `log_audit_event(agent, action, ...)` | `audit_log` | Log action for compliance |
 | `get_audit_trail` | `get_audit_trail(limit, agent)` | `audit_log` | Query audit history |
+| `cross_entity_risk_scan` | `cross_entity_risk_scan(...)` | `companies`, `crypto_projects` | Find high-risk entities across domains |
+| `get_entity_network` | `get_entity_network(entity)` | multiple | Build related-entity and risk relationship views |
+| `generate_risk_report` | `generate_risk_report(entity)` | multiple | Produce structured cross-signal risk reports |
 
 #### 🔌 MongoDB MCP Server — Dynamic Tools
 
-When configured, the MCP server exposes additional MongoDB operations (`find`, `aggregate`, `insertOne`, `updateOne`, `deleteOne`, `listDatabases`, `listCollections`, `createIndex`, `explain`) directly to the Orchestrator agent.
+When configured, the MCP server exposes additional MongoDB operations (`find`, `aggregate`, `insertOne`, `updateOne`, `deleteOne`, `listDatabases`, `listCollections`, `createIndex`, `explain`) to the optional `mongodb_mcp_agent`, which the orchestrator can delegate to for ad-hoc database work.
 
 ---
 
@@ -572,7 +588,7 @@ stateDiagram-v2
   "action": "get_crypto_trust_score",
   "input_summary": "Trust assessment for Uniswap",
   "output_summary": "Score: 78/100, Risk: LOW",
-  "model_used": "gemini-3-flash",
+  "model_used": "gemini-3.5-flash",
   "latency_ms": 1247,
   "fallback_triggered": false
 }
@@ -605,8 +621,11 @@ stateDiagram-v2
 graph TB
     subgraph "Google Cloud"
         subgraph "Cloud Run"
-            Container["🐳 Vartovii Agent<br/>Python 3.11<br/>Google ADK 1.27.3"]
-            MCP_Proc["🔌 mongodb-mcp-server<br/>(child process via npx)"]
+            Container["Vartovii Web Console<br/>FastAPI + Google ADK"]
+            MCP_Proc["mongodb-mcp-server<br/>(child process via npx)"]
+        end
+        subgraph "Agent Engine"
+            AgentRuntime["Hosted ADK agent graph<br/>root_agent + sub-agents"]
         end
     end
 
@@ -621,20 +640,36 @@ graph TB
     end
 
     subgraph "Google AI"
-        Gemini["Gemini API<br/>3 Flash / 3 Pro<br/>2.5 Flash / 2.0 Flash"]
+        Gemini["Vertex AI Gemini<br/>3.5 Flash GA<br/>3.1 Pro preview opt-in"]
         Search["Google Search<br/>Grounding API"]
     end
 
     Container --> Gemini
+    AgentRuntime --> Gemini
     Container --> Search
+    AgentRuntime --> Search
     Container -->|"PyMongo (TLS)"| Cluster
+    AgentRuntime -->|"PyMongo tools (TLS)"| Cluster
     MCP_Proc -->|"stdio ↔ MCP"| Container
     MCP_Proc -->|"MongoDB Wire Protocol"| Cluster
 
     style Container fill:#4285F4,stroke:#3367D6,color:#fff
+    style AgentRuntime fill:#8E75B2,stroke:#7B62A0,color:#fff
     style Cluster fill:#47A248,stroke:#3d8b3d,color:#fff
     style Gemini fill:#8E75B2,stroke:#7B62A0,color:#fff
 ```
+
+Cloud Run is the primary hosted product surface because the container includes
+the FastAPI dashboard, static web console, and Node.js runtime required for the
+official MongoDB MCP server. Agent Engine is the hosted Google Cloud agent
+runtime path for the ADK graph and can be deployed with
+`scripts/deploy_agent_engine.sh`.
+
+The Agent Engine helper generates a temporary sanitized env file by default. It
+keeps `MONGODB_MCP_ENABLED=false` and `MONGODB_ENABLED=false` so the hosted ADK
+graph can be deployed without copying local secrets or trying to launch the
+Cloud Run container's Node.js MCP child process. Cloud Run remains the live
+MongoDB + MCP product surface.
 
 ### Environment Variables
 
@@ -644,9 +679,14 @@ graph TB
 | `MONGODB_CONNECTION_STRING` | ✅ | MongoDB Atlas connection URI |
 | `MONGODB_DATABASE` | — | Database name (default: `vartovii`) |
 | `MONGODB_ENABLED` | — | Enable/disable MongoDB (default: `true`) |
-| `GEMINI_MODEL_PROFILE` | — | `preview` (Gemini 3) or `stable` (Gemini 2.5) |
+| `MONGODB_MCP_ENABLED` | — | Enable/disable Node-based MongoDB MCP child process (default: `true`) |
+| `AGENT_ENGINE_MCP_ENABLED` | — | Enable/disable MCP for Agent Engine deploys (default: `false`) |
+| `GEMINI_MODEL_PROFILE` | — | `stable` (Gemini 3.5 Flash GA), `cost` (Gemini 3.1 Flash-Lite GA), or `preview` (Gemini 3.1 Pro report opt-in) |
 | `ADK_ENABLED` | — | Enable/disable ADK agents (default: `true`) |
-| `GOOGLE_CLOUD_PROJECT` | — | GCP project ID (for Cloud Run) |
+| `GOOGLE_CLOUD_PROJECT` | — | GCP project ID (for Cloud Run and Agent Engine) |
+| `GOOGLE_CLOUD_LOCATION` | — | Vertex AI Gemini location (default: `global`) |
+| `CLOUD_RUN_REGION` | — | Cloud Run deployment region (default: `europe-west1`) |
+| `AGENT_ENGINE_REGION` | — | Agent Engine deployment region (default: `europe-west1`) |
 
 ---
 
@@ -670,9 +710,9 @@ graph TD
     B -->|No| D["Use Mock Data"]
     C --> E{Primary Model Available?}
     D --> E
-    E -->|Yes| F["Gemini 3 Flash"]
+    E -->|Yes| F["Gemini 3.5 Flash"]
     E -->|No| G{Fallback Available?}
-    G -->|Yes| H["Gemini 2.5 Flash"]
+    G -->|Yes| H["Gemini 3.1 Flash-Lite / 3.5 Flash"]
     G -->|No| I["Gemini 2.0 Flash (Ultimate)"]
     F --> J["Return Response"]
     H --> J
@@ -701,5 +741,5 @@ graph TD
 
 <p align="center">
   <strong>🏆 Built for Google Cloud Rapid Agent Hackathon — MongoDB Track</strong><br/>
-  <em>5 agents · 17 tools · MongoDB MCP · Gemini 3 · Google ADK</em>
+  <em>5 core agents · 28 custom tools · optional MongoDB MCP specialist · Vertex AI Gemini · Google ADK</em>
 </p>

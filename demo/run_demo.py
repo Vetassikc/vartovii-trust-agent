@@ -164,8 +164,8 @@ async def run_all_demos():
             await asyncio.sleep(2)
 
     print("\n✅ All demo scenarios completed!")
-    print("📊 Live platform: https://sentryanalytic.com")
-    print("📖 Documentation: https://docs.sentryanalytic.com")
+    print("🌐 Hosted demo: use the Cloud Run URL printed by scripts/deploy.sh")
+    print("📖 Documentation: README.md and ARCHITECTURE.md")
 
 
 if __name__ == "__main__":

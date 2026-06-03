@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Vartovii Trust Intelligence — Autonomous multi-agent trust due-diligence dashboard powered by Google ADK, Gemini & MongoDB Atlas.">
+    <meta name="description" content="Vartovii Trust Intelligence — Autonomous multi-agent trust due-diligence console powered by Google ADK, Gemini, MongoDB Atlas, and MCP.">
     <meta name="color-scheme" content="dark">
     <title>Vartovii — Trust Intelligence Dashboard</title>
+    <link rel="icon" href="data:,">
 
     <!-- Google Fonts: Outfit (headings), Inter (body), JetBrains Mono (code/numbers) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,13 +17,6 @@
 </head>
 <body>
 
-    <!-- ═══════════════════════════════════════════════════════
-         AMBIENT BACKGROUND EFFECTS
-         Three radial gradient orbs that drift behind content
-    ═══════════════════════════════════════════════════════ -->
-    <div class="bg-orb bg-orb--cyan" aria-hidden="true"></div>
-    <div class="bg-orb bg-orb--purple" aria-hidden="true"></div>
-    <div class="bg-orb bg-orb--accent" aria-hidden="true"></div>
     <div class="noise-overlay" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -32,7 +26,12 @@
         <div class="header__inner">
             <!-- Logo -->
             <a href="#" class="header__logo" aria-label="Vartovii Home">
-                <span class="header__logo-icon">🛡️</span>
+                <span class="header__logo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                        <path d="M12 3l7 3v5c0 5.1-3.1 8.6-7 10-3.9-1.4-7-4.9-7-10V6l7-3z"/>
+                        <path d="M9 12l2 2 4-5"/>
+                    </svg>
+                </span>
                 <div class="header__logo-text">
                     <span class="header__brand">VARTOVII</span>
                     <span class="header__tagline">Trust Intelligence</span>
@@ -41,8 +40,9 @@
 
             <!-- Nav links -->
             <nav class="header__nav" aria-label="Main navigation">
-                <a href="#dashboard" class="header__link header__link--active">Dashboard</a>
-                <a href="#chat" class="header__link">Chat</a>
+                <a href="#dashboard" class="header__link header__link--active">Console</a>
+                <a href="#evidence" class="header__link">Evidence</a>
+                <a href="#chat" class="header__link">Agent</a>
                 <a href="#leaderboard" class="header__link">Leaderboard</a>
                 <a href="#architecture" class="header__link">Architecture</a>
             </nav>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="header__badges">
                     <span class="tech-badge">Google ADK</span>
-                    <span class="tech-badge tech-badge--purple">Gemini 2.5</span>
+                    <span class="tech-badge tech-badge--purple">Agent Engine ready</span>
                     <span class="tech-badge tech-badge--green">MongoDB Atlas</span>
                     <span class="tech-badge tech-badge--orange">MCP Protocol</span>
                 </div>
@@ -70,13 +70,97 @@
 
     <main>
         <!-- ═══════════════════════════════════════════════════════
-             2. HERO STATS BAR — Live from /api/stats
+             2. OPERATOR CONSOLE HERO
         ═══════════════════════════════════════════════════════ -->
-        <section class="stats-section" id="dashboard">
+        <section class="hero-section" id="dashboard">
+            <div class="container">
+                <div class="hero-layout">
+                    <div class="hero-copy">
+                        <div class="section-eyebrow">
+                            <span class="eyebrow-dot"></span>
+                            Google Cloud Rapid Agent Hackathon · MongoDB Track
+                        </div>
+                        <h1>Autonomous trust investigations for companies and crypto projects.</h1>
+                        <p class="hero-copy__lead">
+                            Vartovii turns fragmented reviews, market signals, wallet activity, and agent memory into an auditable trust decision with Gemini-powered delegation and MongoDB-backed evidence.
+                        </p>
+                        <div class="hero-actions">
+                            <a class="action-btn action-btn--primary" href="#chat">Run investigation</a>
+                            <a class="action-btn action-btn--secondary" href="#evidence">Review proof</a>
+                        </div>
+                        <div class="hero-proof-strip" aria-label="Submission readiness">
+                            <span><strong>5</strong> core agents</span>
+                            <span><strong>28</strong> custom tools</span>
+                            <span><strong>56</strong> tests</span>
+                            <span><strong>MCP</strong> Atlas specialist</span>
+                        </div>
+                    </div>
+
+                    <aside class="command-brief glass-panel" aria-label="Live investigation brief">
+                        <div class="command-brief__header">
+                            <div>
+                                <span class="command-brief__label">Decision brief</span>
+                                <h2>Wirecard AG</h2>
+                            </div>
+                            <span class="source-pill" id="data-source-pill">Checking source</span>
+                        </div>
+
+                        <div class="verdict-card">
+                            <div class="verdict-card__score">28</div>
+                            <div class="verdict-card__body">
+                                <span class="risk-badge risk-badge--critical">Critical risk</span>
+                                <p>Trust deficit detected across corporate history, review sentiment, and unresolved governance signals.</p>
+                            </div>
+                        </div>
+
+                        <div class="agent-flow" aria-label="Agent execution path">
+                            <div class="agent-flow__step agent-flow__step--active">
+                                <span>01</span>
+                                <div>
+                                    <strong>Orchestrator</strong>
+                                    <small>Routes the case to the right specialists</small>
+                                </div>
+                            </div>
+                            <div class="agent-flow__step">
+                                <span>02</span>
+                                <div>
+                                    <strong>Corporate + OSINT</strong>
+                                    <small>Scores reviews, risk history, and web evidence</small>
+                                </div>
+                            </div>
+                            <div class="agent-flow__step">
+                                <span>03</span>
+                                <div>
+                                    <strong>Memory + MCP</strong>
+                                    <small>Stores the audit trail and can inspect Atlas directly</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mcp-proof">
+                            <span class="mcp-proof__tag">MCP proof</span>
+                            <p>MongoDB MCP specialist is registered as an optional ADK sub-agent for ad-hoc find, aggregate, and explain-plan work.</p>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
+             3. HERO STATS BAR — Live from /api/stats
+        ═══════════════════════════════════════════════════════ -->
+        <section class="stats-section" id="intelligence">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
                     Live Intelligence Overview
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Evidence coverage</h2>
+                        <p>Current entity universe, trust score distribution, and investigation surface.</p>
+                    </div>
+                    <span class="section-meta" id="last-sync-label">Sync pending</span>
                 </div>
                 <div class="stats-grid">
                     <!-- Card 1: Companies -->
@@ -135,20 +219,20 @@
                 </div>
 
                 <!-- Risk distribution bar -->
-                <div class="risk-bar-container">
-                    <div class="risk-bar-label">Risk Distribution</div>
-                    <div class="risk-bar" id="risk-bar">
-                        <div class="risk-bar__segment risk-bar__segment--critical" id="risk-critical" style="width:0%">
-                            <span class="risk-bar__tooltip">CRITICAL: 0</span>
+                <div class="riskmeter-container">
+                    <div class="riskmeter-label">Risk Distribution</div>
+                    <div class="riskmeter" id="riskmeter">
+                        <div class="riskmeter__segment riskmeter__segment--critical" id="risk-critical" style="width:0%">
+                            <span class="riskmeter__tooltip">CRITICAL: 0</span>
                         </div>
-                        <div class="risk-bar__segment risk-bar__segment--high" id="risk-high" style="width:0%">
-                            <span class="risk-bar__tooltip">HIGH: 0</span>
+                        <div class="riskmeter__segment riskmeter__segment--high" id="risk-high" style="width:0%">
+                            <span class="riskmeter__tooltip">HIGH: 0</span>
                         </div>
-                        <div class="risk-bar__segment risk-bar__segment--medium" id="risk-medium" style="width:0%">
-                            <span class="risk-bar__tooltip">MEDIUM: 0</span>
+                        <div class="riskmeter__segment riskmeter__segment--medium" id="risk-medium" style="width:0%">
+                            <span class="riskmeter__tooltip">MEDIUM: 0</span>
                         </div>
-                        <div class="risk-bar__segment risk-bar__segment--low" id="risk-low" style="width:0%">
-                            <span class="risk-bar__tooltip">LOW: 0</span>
+                        <div class="riskmeter__segment riskmeter__segment--low" id="risk-low" style="width:0%">
+                            <span class="riskmeter__tooltip">LOW: 0</span>
                         </div>
                     </div>
                     <div class="risk-legend" id="risk-legend"></div>
@@ -157,27 +241,80 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             3. AI AGENT CHAT — POST /api/chat
+             4. HACKATHON EVIDENCE
+        ═══════════════════════════════════════════════════════ -->
+        <section class="evidence-section" id="evidence">
+            <div class="container">
+                <div class="section-eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Submission Evidence
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Built to satisfy the judging checklist</h2>
+                        <p>Gemini agent runtime, Google ADK deployment path, MongoDB Atlas partner MCP, and verifiable product quality.</p>
+                    </div>
+                    <span class="section-meta">Submit/video pending</span>
+                </div>
+                <div class="proof-grid">
+                    <article class="proof-card proof-card--ready">
+                        <span class="proof-card__status">Implemented</span>
+                        <h3>Gemini multi-agent runtime</h3>
+                        <p>Root ADK orchestrator delegates to corporate, crypto, OSINT, memory, and optional MongoDB MCP specialists.</p>
+                    </article>
+                    <article class="proof-card proof-card--ready">
+                        <span class="proof-card__status">Ready</span>
+                        <h3>Google Cloud deployment path</h3>
+                        <p>Cloud Run service and ADK Agent Engine deployment commands are prepared for production credentials.</p>
+                    </article>
+                    <article class="proof-card proof-card--ready">
+                        <span class="proof-card__status">Integrated</span>
+                        <h3>MongoDB Atlas MCP</h3>
+                        <p>Official `mongodb-mcp-server` runs through ADK `McpToolset` when an Atlas connection string is configured.</p>
+                    </article>
+                    <article class="proof-card proof-card--ready">
+                        <span class="proof-card__status">Verified</span>
+                        <h3>Quality gate</h3>
+                        <p>Automated architecture, service, dashboard fallback, and MCP construction tests keep the demo stable.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
+             5. AI AGENT CHAT — POST /api/chat
         ═══════════════════════════════════════════════════════ -->
         <section class="chat-section" id="chat">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot eyebrow-dot--pulse"></span>
-                    AI Agent Terminal
+                    Agent Workspace
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Run a trust investigation</h2>
+                        <p>The chat surface is wired to the ADK orchestrator and preserves a session-level audit trail.</p>
+                    </div>
                 </div>
                 <div class="chat-panel glass-panel">
                     <!-- Chat messages area -->
                     <div class="chat-messages" id="chat-messages">
                         <div class="chat-welcome">
-                            <div class="chat-welcome__icon">🛡️</div>
+                            <div class="chat-welcome__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                                    <path d="M12 3l7 3v5c0 5.1-3.1 8.6-7 10-3.9-1.4-7-4.9-7-10V6l7-3z"/>
+                                    <path d="M8 13h8"/>
+                                    <path d="M12 9v8"/>
+                                </svg>
+                            </div>
                             <h3>Vartovii Trust Agent</h3>
-                            <p>Ask me anything about company trust scores, crypto risk analysis, fraud detection, or employer comparisons. I have access to live databases and OSINT tools.</p>
+                            <p>Start with a target entity and the agent will route the case through specialist tools, evidence memory, and risk scoring.</p>
                         </div>
                     </div>
 
                     <!-- Typing indicator -->
                     <div class="typing-indicator" id="typing-indicator" hidden>
-                        <div class="typing-indicator__avatar">🤖</div>
+                        <div class="typing-indicator__avatar">AI</div>
                         <div class="typing-indicator__dots">
                             <span></span><span></span><span></span>
                         </div>
@@ -187,19 +324,19 @@
                     <!-- Quick action buttons -->
                     <div class="chat-quick-actions">
                         <button class="quick-btn" data-prompt="Investigate Wirecard as an employer. What is their trust score and what happened to them?">
-                            🏢 Analyze Wirecard
+                            Analyze Wirecard
                         </button>
                         <button class="quick-btn" data-prompt="What is Bitcoin's trust score? Give me the full breakdown.">
-                            🪙 Bitcoin Trust Score
+                            Bitcoin trust score
                         </button>
                         <button class="quick-btn" data-prompt="Scan for all CRITICAL-risk entities across companies and crypto. What patterns do you see?">
-                            🔍 Find fraud patterns
+                            Find fraud patterns
                         </button>
                         <button class="quick-btn" data-prompt="Compare Google and Apple as employers. Which one is better?">
-                            🆚 Compare Google vs Apple
+                            Compare Google vs Apple
                         </button>
                         <button class="quick-btn" data-prompt="Show me the top 5 most trusted employers in the database.">
-                            💼 Top employers
+                            Top employers
                         </button>
                     </div>
 
@@ -218,7 +355,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             4. TRUST LEADERBOARD — /api/leaderboard
+             6. TRUST LEADERBOARD — /api/leaderboard
         ═══════════════════════════════════════════════════════ -->
         <section class="leaderboard-section" id="leaderboard">
             <div class="container">
@@ -226,10 +363,16 @@
                     <span class="eyebrow-dot"></span>
                     Trust Leaderboard
                 </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Ranked entities</h2>
+                        <p>Click any row to inspect the score, risk label, and supporting detail contract.</p>
+                    </div>
+                </div>
                 <div class="leaderboard-panel glass-panel">
                     <div class="leaderboard-tabs">
-                        <button class="tab-btn tab-btn--active" data-tab="companies">🏢 Companies</button>
-                        <button class="tab-btn" data-tab="crypto">🪙 Crypto</button>
+                        <button class="tab-btn tab-btn--active" data-tab="companies">Companies</button>
+                        <button class="tab-btn" data-tab="crypto">Crypto</button>
                     </div>
                     <div class="leaderboard-refresh">
                         <span class="refresh-timer" id="refresh-timer">Auto-refresh in 60s</span>
@@ -263,13 +406,19 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             5. RISK DISTRIBUTION PANEL
+             7. RISK DISTRIBUTION PANEL
         ═══════════════════════════════════════════════════════ -->
         <section class="risk-section" id="risk">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
                     Risk Intelligence
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Risk distribution</h2>
+                        <p>Severity buckets across companies and crypto projects in the active evidence set.</p>
+                    </div>
                 </div>
                 <div class="risk-cards-grid" id="risk-cards">
                     <!-- Dynamically populated: CRITICAL, HIGH, MEDIUM, LOW cards -->
@@ -310,13 +459,19 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             6. INVESTIGATION HISTORY — /api/investigations
+             8. INVESTIGATION HISTORY — /api/investigations
         ═══════════════════════════════════════════════════════ -->
         <section class="investigations-section" id="investigations">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
                     Investigation History
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Recent decisions</h2>
+                        <p>Saved assessments and summaries produced by the memory agent.</p>
+                    </div>
                 </div>
                 <div class="investigations-panel glass-panel">
                     <div class="timeline" id="investigations-timeline">
@@ -330,13 +485,19 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             7. ARCHITECTURE VISUALIZATION
+             9. ARCHITECTURE VISUALIZATION
         ═══════════════════════════════════════════════════════ -->
         <section class="arch-section" id="architecture">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
                     Multi-Agent Architecture
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Agent graph</h2>
+                        <p>Domain specialists keep the root orchestrator focused on routing while tool access stays scoped.</p>
+                    </div>
                 </div>
                 <div class="arch-panel glass-panel">
                     <div class="arch-svg-wrap">
@@ -348,24 +509,24 @@
                                 </pattern>
                                 <!-- Gradient definitions -->
                                 <linearGradient id="g-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#00f2fe"/>
-                                    <stop offset="100%" stop-color="#4facfe"/>
+                                    <stop offset="0%" stop-color="#d6b56d"/>
+                                    <stop offset="100%" stop-color="#7ecdc3"/>
                                 </linearGradient>
                                 <linearGradient id="g-green" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#2d8e47"/>
-                                    <stop offset="100%" stop-color="#34a853"/>
+                                    <stop offset="0%" stop-color="#4e8e63"/>
+                                    <stop offset="100%" stop-color="#70b783"/>
                                 </linearGradient>
                                 <linearGradient id="g-orange" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#c77200"/>
-                                    <stop offset="100%" stop-color="#ea8600"/>
+                                    <stop offset="0%" stop-color="#986138"/>
+                                    <stop offset="100%" stop-color="#c7864b"/>
                                 </linearGradient>
                                 <linearGradient id="g-purple" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#7b2bc1"/>
-                                    <stop offset="100%" stop-color="#9334e6"/>
+                                    <stop offset="0%" stop-color="#77659d"/>
+                                    <stop offset="100%" stop-color="#9f8ac7"/>
                                 </linearGradient>
                                 <linearGradient id="g-red" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#c62828"/>
-                                    <stop offset="100%" stop-color="#ea4335"/>
+                                    <stop offset="0%" stop-color="#a14d43"/>
+                                    <stop offset="100%" stop-color="#d46a59"/>
                                 </linearGradient>
                                 <!-- Animated flow markers -->
                                 <filter id="glow-cyan">
@@ -381,87 +542,87 @@
 
                             <!-- ── Connection Lines with animated flow ── -->
                             <!-- Orchestrator → Corporate -->
-                            <line x1="450" y1="105" x2="175" y2="230" stroke="rgba(52,168,83,0.3)" stroke-width="2" stroke-dasharray="6,4"/>
-                            <circle r="4" fill="#34a853" filter="url(#glow-green)">
+                            <line x1="450" y1="105" x2="175" y2="230" stroke="rgba(112,183,131,0.32)" stroke-width="2" stroke-dasharray="6,4"/>
+                            <circle r="4" fill="#70b783" filter="url(#glow-green)">
                                 <animateMotion dur="2s" repeatCount="indefinite" path="M450,105 L175,230"/>
                             </circle>
 
                             <!-- Orchestrator → Crypto -->
-                            <line x1="450" y1="105" x2="400" y2="230" stroke="rgba(234,134,0,0.3)" stroke-width="2" stroke-dasharray="6,4"/>
-                            <circle r="4" fill="#ea8600">
+                            <line x1="450" y1="105" x2="400" y2="230" stroke="rgba(199,134,75,0.32)" stroke-width="2" stroke-dasharray="6,4"/>
+                            <circle r="4" fill="#c7864b">
                                 <animateMotion dur="2.5s" repeatCount="indefinite" path="M450,105 L400,230"/>
                             </circle>
 
                             <!-- Orchestrator → OSINT -->
-                            <line x1="450" y1="105" x2="625" y2="230" stroke="rgba(147,52,230,0.3)" stroke-width="2" stroke-dasharray="6,4"/>
-                            <circle r="4" fill="#9334e6">
+                            <line x1="450" y1="105" x2="625" y2="230" stroke="rgba(159,138,199,0.32)" stroke-width="2" stroke-dasharray="6,4"/>
+                            <circle r="4" fill="#9f8ac7">
                                 <animateMotion dur="2.2s" repeatCount="indefinite" path="M450,105 L625,230"/>
                             </circle>
 
                             <!-- Orchestrator → Memory -->
-                            <line x1="450" y1="105" x2="810" y2="230" stroke="rgba(234,67,53,0.3)" stroke-width="2" stroke-dasharray="6,4"/>
-                            <circle r="4" fill="#ea4335">
+                            <line x1="450" y1="105" x2="810" y2="230" stroke="rgba(212,106,89,0.32)" stroke-width="2" stroke-dasharray="6,4"/>
+                            <circle r="4" fill="#d46a59">
                                 <animateMotion dur="1.8s" repeatCount="indefinite" path="M450,105 L810,230"/>
                             </circle>
 
                             <!-- Sub-agents → MongoDB -->
-                            <line x1="175" y1="310" x2="380" y2="430" stroke="rgba(52,168,83,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                            <line x1="400" y1="310" x2="420" y2="430" stroke="rgba(234,134,0,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-                            <line x1="810" y1="310" x2="500" y2="430" stroke="rgba(234,67,53,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                            <line x1="175" y1="310" x2="380" y2="430" stroke="rgba(112,183,131,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
+                            <line x1="400" y1="310" x2="420" y2="430" stroke="rgba(199,134,75,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
+                            <line x1="810" y1="310" x2="500" y2="430" stroke="rgba(212,106,89,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
 
-                            <!-- MCP line from OSINT -->
-                            <line x1="625" y1="310" x2="625" y2="430" stroke="rgba(147,52,230,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+                            <!-- MCP bridge line -->
+                            <line x1="625" y1="310" x2="625" y2="430" stroke="rgba(159,138,199,0.18)" stroke-width="1" stroke-dasharray="4,4"/>
 
                             <!-- ── ORCHESTRATOR NODE ── -->
                             <g class="arch-node">
-                                <rect x="370" y="40" width="160" height="65" rx="12" fill="rgba(15,23,42,0.9)" stroke="url(#g-cyan)" stroke-width="2"/>
-                                <text x="450" y="68" text-anchor="middle" fill="#00f2fe" font-family="Outfit" font-size="13" font-weight="700">🎯 ORCHESTRATOR</text>
-                                <text x="450" y="90" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 2.5 Flash</text>
+                                <rect x="370" y="40" width="160" height="65" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-cyan)" stroke-width="2"/>
+                                <text x="450" y="68" text-anchor="middle" fill="#d6b56d" font-family="Outfit" font-size="13" font-weight="700">ORCHESTRATOR</text>
+                                <text x="450" y="90" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 3.5 Flash</text>
                             </g>
 
                             <!-- ── CORPORATE AGENT ── -->
                             <g class="arch-node">
-                                <rect x="90" y="220" width="170" height="90" rx="10" fill="rgba(15,23,42,0.9)" stroke="url(#g-green)" stroke-width="1.5"/>
-                                <text x="175" y="248" text-anchor="middle" fill="#34a853" font-family="Outfit" font-size="12" font-weight="700">🏢 Corporate Agent</text>
-                                <text x="175" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 2.5 Pro</text>
-                                <text x="175" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">7 tools · reviews, risk, search</text>
+                                <rect x="90" y="220" width="170" height="90" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-green)" stroke-width="1.5"/>
+                                <text x="175" y="248" text-anchor="middle" fill="#70b783" font-family="Outfit" font-size="12" font-weight="700">Corporate Agent</text>
+                                <text x="175" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 3.5 Flash</text>
+                                <text x="175" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">10 tools · reviews, risk, search</text>
                             </g>
 
                             <!-- ── CRYPTO AGENT ── -->
                             <g class="arch-node">
-                                <rect x="310" y="220" width="170" height="90" rx="10" fill="rgba(15,23,42,0.9)" stroke="url(#g-orange)" stroke-width="1.5"/>
-                                <text x="400" y="248" text-anchor="middle" fill="#ea8600" font-family="Outfit" font-size="12" font-weight="700">🪙 Crypto Agent</text>
-                                <text x="400" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 2.5 Pro</text>
-                                <text x="400" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">7 tools · DeFi, wallets, audit</text>
+                                <rect x="310" y="220" width="170" height="90" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-orange)" stroke-width="1.5"/>
+                                <text x="400" y="248" text-anchor="middle" fill="#c7864b" font-family="Outfit" font-size="12" font-weight="700">Crypto Agent</text>
+                                <text x="400" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 3.5 Flash</text>
+                                <text x="400" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">10 tools · DeFi, wallets, audit</text>
                             </g>
 
                             <!-- ── OSINT AGENT ── -->
                             <g class="arch-node">
-                                <rect x="540" y="220" width="170" height="90" rx="10" fill="rgba(15,23,42,0.9)" stroke="url(#g-purple)" stroke-width="1.5"/>
-                                <text x="625" y="248" text-anchor="middle" fill="#9334e6" font-family="Outfit" font-size="12" font-weight="700">🔍 OSINT Agent</text>
-                                <text x="625" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 2.5 Flash</text>
+                                <rect x="540" y="220" width="170" height="90" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-purple)" stroke-width="1.5"/>
+                                <text x="625" y="248" text-anchor="middle" fill="#9f8ac7" font-family="Outfit" font-size="12" font-weight="700">OSINT Agent</text>
+                                <text x="625" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 3.5 Flash</text>
                                 <text x="625" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">1 tool · Google Search</text>
                             </g>
 
                             <!-- ── MEMORY AGENT ── -->
                             <g class="arch-node">
-                                <rect x="730" y="220" width="170" height="90" rx="10" fill="rgba(15,23,42,0.9)" stroke="url(#g-red)" stroke-width="1.5"/>
-                                <text x="810" y="248" text-anchor="middle" fill="#ea4335" font-family="Outfit" font-size="12" font-weight="700">🧠 Memory Agent</text>
-                                <text x="810" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 2.5 Flash</text>
-                                <text x="810" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">5 tools · store, recall, audit</text>
+                                <rect x="730" y="220" width="170" height="90" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-red)" stroke-width="1.5"/>
+                                <text x="810" y="248" text-anchor="middle" fill="#d46a59" font-family="Outfit" font-size="12" font-weight="700">Memory Agent</text>
+                                <text x="810" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono" font-size="10">Gemini 3.5 Flash</text>
+                                <text x="810" y="295" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-family="JetBrains Mono" font-size="9">7 tools · store, recall, audit</text>
                             </g>
 
                             <!-- ── MONGODB ATLAS ── -->
                             <g class="arch-node">
-                                <rect x="330" y="410" width="220" height="65" rx="12" fill="rgba(15,23,42,0.9)" stroke="url(#g-green)" stroke-width="1.5"/>
-                                <text x="440" y="440" text-anchor="middle" fill="#34a853" font-family="Outfit" font-size="12" font-weight="700">☁️ MongoDB Atlas</text>
+                                <rect x="330" y="410" width="220" height="65" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-green)" stroke-width="1.5"/>
+                                <text x="440" y="440" text-anchor="middle" fill="#70b783" font-family="Outfit" font-size="12" font-weight="700">MongoDB Atlas</text>
                                 <text x="440" y="460" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="JetBrains Mono" font-size="9">companies · crypto · reviews · wallets</text>
                             </g>
 
                             <!-- ── MCP SERVER ── -->
                             <g class="arch-node">
-                                <rect x="560" y="410" width="140" height="65" rx="12" fill="rgba(15,23,42,0.9)" stroke="url(#g-purple)" stroke-width="1.5"/>
-                                <text x="630" y="440" text-anchor="middle" fill="#9334e6" font-family="Outfit" font-size="12" font-weight="700">⚡ MCP Server</text>
+                                <rect x="560" y="410" width="140" height="65" rx="8" fill="rgba(13,21,28,0.95)" stroke="url(#g-purple)" stroke-width="1.5"/>
+                                <text x="630" y="440" text-anchor="middle" fill="#9f8ac7" font-family="Outfit" font-size="12" font-weight="700">MCP Server</text>
                                 <text x="630" y="460" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="JetBrains Mono" font-size="9">tool protocol bridge</text>
                             </g>
                         </svg>
@@ -472,7 +633,7 @@
                         <span class="arch-badge">Python 3.12</span>
                         <span class="arch-badge">FastAPI</span>
                         <span class="arch-badge">Google ADK 1.x</span>
-                        <span class="arch-badge">Gemini 2.5 Pro / Flash</span>
+                        <span class="arch-badge">Vertex AI Gemini 3.5</span>
                         <span class="arch-badge">MongoDB Atlas</span>
                         <span class="arch-badge">Cloud Run</span>
                         <span class="arch-badge">MCP Protocol</span>
@@ -483,13 +644,19 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             8. AUDIT LOG — /api/audit
+             10. AUDIT LOG — /api/audit
         ═══════════════════════════════════════════════════════ -->
         <section class="audit-section" id="audit">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
                     Agent Audit Trail
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Execution trace</h2>
+                        <p>Agent actions, tool calls, model routing, and persistence events.</p>
+                    </div>
                 </div>
                 <div class="audit-panel glass-panel">
                     <div class="audit-list" id="audit-list">
@@ -508,7 +675,7 @@
     <footer class="site-footer">
         <div class="container footer-inner">
             <div class="footer-brand">
-                <span class="footer-logo-icon">🛡️</span>
+                <span class="footer-logo-icon">VT</span>
                 <span class="footer-brand-name">VARTOVII</span>
             </div>
             <p class="footer-tagline">Built for <strong>Google Cloud Rapid Agent Hackathon</strong> — MongoDB Track</p>

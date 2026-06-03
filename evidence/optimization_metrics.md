@@ -61,8 +61,8 @@ User Query
 | Metric | Before | After |
 |--------|--------|-------|
 | Fallback tiers | 0 (single model) | 3-tier chain |
-| Primary model | gemini-1.5-flash | gemini-2.5-flash (stable) / gemini-3-flash-preview |
-| Fallback #1 | ❌ None | gemini-2.5-flash (task-specific) |
+| Primary model | gemini-1.5-flash | gemini-3.5-flash (GA stable) / gemini-3.1-pro-preview (report opt-in) |
+| Fallback #1 | ❌ None | gemini-3.1-flash-lite or gemini-3.5-flash (task-specific) |
 | Fallback #2 | ❌ None | gemini-2.0-flash (ultimate) |
 | User-visible failures | ~2-5% during peak load | ~0% (fallback always available) |
 
@@ -106,17 +106,16 @@ User Query
 
 ---
 
-## Test Coverage
+## Repository Test Coverage
 
 | Category | Count |
 |----------|-------|
-| Total passing tests | 800+ |
-| ADK-specific tests | 25+ |
+| Total passing tests | 56 |
+| ADK-specific tests | 35 |
 | Model fallback tests | 10+ |
-| Tool conversation tests | 35+ (35KB test file) |
-| Forensic service tests | 20+ |
-| Report generation tests | 15+ |
-| Routing adapter tests | 10+ |
+| Dashboard API fallback/readiness tests | 6 |
+| Service-layer tests | 13 |
+| Routing adapter tests | 7 |
 
 ---
 
@@ -137,7 +136,7 @@ User Query
 1. **Standard primitives:** `LlmAgent`, `FunctionTool`, `GoogleSearchTool` provide tested, maintained building blocks
 2. **Sub-agent delegation:** Natural language routing eliminates brittle if/else chains
 3. **Session management:** Built-in conversation state with `InMemoryRunner`
-4. **Ecosystem integration:** `GoogleSearchTool` for OSINT, future Agent Engine deployment path
+4. **Ecosystem integration:** `GoogleSearchTool` for OSINT, Cloud Run web demo, and ADK Agent Engine deployment path
 5. **Testing:** Well-defined interfaces make agent behavior testable
 
 ### Why dual tool systems (ADK + Legacy)?

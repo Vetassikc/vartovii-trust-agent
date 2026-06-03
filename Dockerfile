@@ -26,7 +26,7 @@ COPY pyproject.toml ./
 # Install Python dependencies
 RUN pip install --no-cache-dir -e ".[api]" 2>/dev/null || \
     pip install --no-cache-dir \
-    "google-adk>=1.27.3" \
+    "google-adk==2.0.0" \
     "python-dotenv>=1.0.0" \
     "pymongo[srv]>=4.7.0" \
     "mcp>=1.0.0" \
@@ -46,7 +46,7 @@ COPY README.md LICENSE ./
 
 # Environment defaults (overridden at runtime)
 ENV PORT=8080
-ENV GEMINI_MODEL_PROFILE=preview
+ENV GEMINI_MODEL_PROFILE=stable
 ENV ADK_ENABLED=true
 ENV MONGODB_ENABLED=true
 ENV PYTHONUNBUFFERED=1
