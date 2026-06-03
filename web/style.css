@@ -379,6 +379,7 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.45rem;
     min-height: 42px;
     padding: 0.65rem 1rem;
     border-radius: 8px;
@@ -388,6 +389,11 @@ body {
     transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 .action-btn:hover { transform: translateY(-1px); }
+.action-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
 .action-btn--primary {
     background: var(--gold);
     color: #12100a;
@@ -419,6 +425,35 @@ body {
 .hero-proof-strip strong {
     color: var(--gold);
     font-family: var(--font-mono);
+}
+.judge-scorecard {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    max-width: 800px;
+    margin-top: 1rem;
+}
+.judge-scorecard__item {
+    min-height: 82px;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    background: rgba(246,241,226,0.026);
+    padding: 0.75rem;
+}
+.judge-scorecard__item span {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.45rem;
+}
+.judge-scorecard__item strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    line-height: 1.35;
 }
 .command-brief {
     align-self: center;
@@ -486,6 +521,45 @@ body {
     color: var(--text-secondary);
     font-size: 0.84rem;
     line-height: 1.55;
+}
+.runtime-proof-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+.runtime-proof {
+    border: 1px solid rgba(126,205,195,0.18);
+    border-radius: 8px;
+    background: rgba(126,205,195,0.045);
+    padding: 0.75rem;
+    min-width: 0;
+}
+.runtime-proof span {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+}
+.runtime-proof a,
+.runtime-proof strong {
+    display: block;
+    color: var(--cyan);
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+.runtime-proof a:hover { text-decoration: underline; }
+.runtime-proof small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 .agent-flow {
     display: flex;
@@ -810,6 +884,22 @@ body {
     font-size: 0.85rem;
     max-width: 500px;
     margin: 0 auto;
+}
+.demo-path {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 1rem;
+}
+.demo-path span {
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: rgba(246,241,226,0.03);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.5rem;
 }
 
 /* Message bubbles */
@@ -1667,6 +1757,9 @@ body {
     .proof-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    .judge-scorecard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 900px) {
@@ -1720,8 +1813,27 @@ body {
     .hero-copy__lead {
         font-size: 0.96rem;
     }
+    .hero-proof-strip {
+        margin-top: 1.35rem;
+        gap: 0.45rem;
+    }
+    .judge-scorecard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+    .judge-scorecard__item {
+        min-height: 74px;
+        padding: 0.65rem;
+    }
+    .judge-scorecard__item strong {
+        font-size: 0.78rem;
+    }
     .command-brief {
         padding: 1rem;
+        gap: 0.75rem;
+    }
+    .runtime-proof-grid {
+        grid-template-columns: 1fr;
     }
     .verdict-card {
         grid-template-columns: 1fr;

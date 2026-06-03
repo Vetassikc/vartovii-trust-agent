@@ -167,6 +167,19 @@
         return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
+    function shortResourceName(resource) {
+        if (!resource) return 'resource pending';
+        const parts = resource.split('/').filter(Boolean);
+        const id = parts[parts.length - 1] || resource;
+        return `reasoningEngine ${id}`;
+    }
+
+    function humanStatus(status) {
+        return String(status || 'ready')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     // ════════════════════════════════════════════════════════════
     //  1. HEALTH CHECK
     // ════════════════════════════════════════════════════════════
@@ -202,6 +215,52 @@
                     ? 'MongoDB live'
                     : 'Mock fallback';
             }
+
+            const hostedUrl = data.submission?.hosted_url;
+            const hostedLink = $('#hosted-url-link');
+            if (hostedUrl && hostedLink) {
+                hostedLink.href = hostedUrl;
+                hostedLink.textContent = 'Cloud Run live';
+            }
+
+            const agentEngine = data.agent_engine || {};
+            const agentEngineStatus = $('#agent-engine-status');
+            const agentEngineResource = $('#agent-engine-resource');
+            const agentEngineBadge = $('#agent-engine-header-badge');
+            if (agentEngineStatus) {
+                agentEngineStatus.textContent = agentEngine.status === 'deployed'
+                    ? 'Deployed'
+                    : 'Deployable';
+            }
+            if (agentEngineResource) {
+                agentEngineResource.textContent = shortResourceName(agentEngine.resource);
+                agentEngineResource.title = agentEngine.resource || '';
+            }
+            if (agentEngineBadge) {
+                agentEngineBadge.textContent = agentEngine.status === 'deployed'
+                    ? 'Agent Engine live'
+                    : 'Agent Engine ready';
+            }
+
+            const submissionMeta = $('#submission-meta');
+            if (submissionMeta) {
+                const video = data.submission?.demo_video === 'pending'
+                    ? 'video pending'
+                    : 'video ready';
+                submissionMeta.textContent = `${hostedUrl ? 'Hosted live' : 'Hosted pending'} · ${video}`;
+            }
+
+            const requirements = new Map((data.requirements || []).map(item => [item.name, item]));
+            const cloudReq = requirements.get('Google Cloud Agent Builder path');
+            const mcpReq = requirements.get('Partner MCP server');
+            const geminiReq = requirements.get('Gemini-powered AI agent');
+            const hostedReq = requirements.get('Hosted production service');
+
+            if ($('#proof-cloud-status') && cloudReq) $('#proof-cloud-status').textContent = humanStatus(cloudReq.status);
+            if ($('#proof-cloud-evidence') && cloudReq) $('#proof-cloud-evidence').textContent = cloudReq.evidence;
+            if ($('#proof-mcp-status') && mcpReq) $('#proof-mcp-status').textContent = humanStatus(mcpReq.status);
+            if ($('#proof-gemini-status') && geminiReq) $('#proof-gemini-status').textContent = humanStatus(geminiReq.status);
+            if ($('#proof-quality-status') && hostedReq) $('#proof-quality-status').textContent = humanStatus(hostedReq.status);
         } catch (err) {
             console.warn('Readiness load failed:', err);
         }
@@ -351,7 +410,7 @@
             addChatMessage('agent', data.response || 'No response received.', data.agent);
         } catch (err) {
             setTypingIndicator(false);
-            addChatMessage('agent', `⚠️ **Error:** Could not reach the agent. ${err.message}`);
+            addChatMessage('agent', `**Error:** Could not reach the agent. ${err.message}`);
         } finally {
             isChatBusy = false;
             sendBtn.disabled = false;

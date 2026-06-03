@@ -53,6 +53,18 @@ PUBLIC_HOSTED_URL: str = os.getenv(
     "PUBLIC_HOSTED_URL",
     "https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app",
 )
+AGENT_ENGINE_RESOURCE_NAME: str = os.getenv(
+    "AGENT_ENGINE_RESOURCE_NAME",
+    "projects/1047739822568/locations/europe-west1/reasoningEngines/1778103816160280576",
+)
+AGENT_ENGINE_CONSOLE_URL: str = os.getenv(
+    "AGENT_ENGINE_CONSOLE_URL",
+    (
+        "https://console.cloud.google.com/vertex-ai/agents/agent-engines/"
+        "locations/europe-west1/agent-engines/1778103816160280576/playground"
+        "?project=1047739822568"
+    ),
+)
 
 # ---------------------------------------------------------------------------
 # Module-level MongoDB state
@@ -355,6 +367,11 @@ async def readiness_check() -> dict[str, Any]:
             "demo_video": "pending",
             "track": "MongoDB",
         },
+        "agent_engine": {
+            "status": "deployed" if AGENT_ENGINE_RESOURCE_NAME else "deployable",
+            "resource": AGENT_ENGINE_RESOURCE_NAME,
+            "console_url": AGENT_ENGINE_CONSOLE_URL,
+        },
         "requirements": [
             {
                 "name": "Gemini-powered AI agent",
@@ -363,7 +380,7 @@ async def readiness_check() -> dict[str, Any]:
             },
             {
                 "name": "Google Cloud Agent Builder path",
-                "status": "ready",
+                "status": "deployed" if AGENT_ENGINE_RESOURCE_NAME else "ready",
                 "evidence": (
                     "scripts/deploy_agent_engine.sh deploys an ADK App object "
                     "to Vertex AI Agent Engine"

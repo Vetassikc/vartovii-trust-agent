@@ -55,7 +55,7 @@
                 </div>
                 <div class="header__badges">
                     <span class="tech-badge">Google ADK</span>
-                    <span class="tech-badge tech-badge--purple">Agent Engine ready</span>
+                    <span class="tech-badge tech-badge--purple" id="agent-engine-header-badge">Agent Engine live</span>
                     <span class="tech-badge tech-badge--green">MongoDB Atlas</span>
                     <span class="tech-badge tech-badge--orange">MCP Protocol</span>
                 </div>
@@ -80,19 +80,45 @@
                             <span class="eyebrow-dot"></span>
                             Google Cloud Rapid Agent Hackathon · MongoDB Track
                         </div>
-                        <h1>Autonomous trust investigations for companies and crypto projects.</h1>
+                        <h1>Auditable trust decisions, not chatbot answers.</h1>
                         <p class="hero-copy__lead">
-                            Vartovii turns fragmented reviews, market signals, wallet activity, and agent memory into an auditable trust decision with Gemini-powered delegation and MongoDB-backed evidence.
+                            Vartovii plans, routes, scores, and stores due-diligence work across company and crypto evidence using Gemini 3.5, Google ADK, Agent Engine, MongoDB Atlas, and MCP.
                         </p>
                         <div class="hero-actions">
-                            <a class="action-btn action-btn--primary" href="#chat">Run investigation</a>
-                            <a class="action-btn action-btn--secondary" href="#evidence">Review proof</a>
+                            <a class="action-btn action-btn--primary" href="#chat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                                Run judge demo
+                            </a>
+                            <a class="action-btn action-btn--secondary" href="#evidence">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l7 3v5c0 5.1-3.1 8.6-7 10-3.9-1.4-7-4.9-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
+                                Review proof
+                            </a>
                         </div>
                         <div class="hero-proof-strip" aria-label="Submission readiness">
+                            <span><strong>Live</strong> Cloud Run URL</span>
+                            <span><strong>Vertex</strong> Agent Engine</span>
                             <span><strong>5</strong> core agents</span>
                             <span><strong>28</strong> custom tools</span>
                             <span><strong>56</strong> tests</span>
-                            <span><strong>MCP</strong> Atlas specialist</span>
+                            <span><strong>MCP</strong> MongoDB Atlas</span>
+                        </div>
+                        <div class="judge-scorecard" aria-label="Judging criteria alignment">
+                            <div class="judge-scorecard__item">
+                                <span>Tech</span>
+                                <strong>Gemini + ADK + MCP</strong>
+                            </div>
+                            <div class="judge-scorecard__item">
+                                <span>Design</span>
+                                <strong>Evidence-led console</strong>
+                            </div>
+                            <div class="judge-scorecard__item">
+                                <span>Impact</span>
+                                <strong>Trust decisions at speed</strong>
+                            </div>
+                            <div class="judge-scorecard__item">
+                                <span>Idea</span>
+                                <strong>Cross-domain risk graph</strong>
+                            </div>
                         </div>
                     </div>
 
@@ -110,6 +136,18 @@
                             <div class="verdict-card__body">
                                 <span class="risk-badge risk-badge--critical">Critical risk</span>
                                 <p>Trust deficit detected across corporate history, review sentiment, and unresolved governance signals.</p>
+                            </div>
+                        </div>
+
+                        <div class="runtime-proof-grid" aria-label="Runtime proof">
+                            <div class="runtime-proof">
+                                <span>Hosted app</span>
+                                <a id="hosted-url-link" href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app" target="_blank" rel="noreferrer">Cloud Run live</a>
+                            </div>
+                            <div class="runtime-proof">
+                                <span>Agent Engine</span>
+                                <strong id="agent-engine-status">Deployed</strong>
+                                <small id="agent-engine-resource">reasoningEngine ready</small>
                             </div>
                         </div>
 
@@ -254,26 +292,26 @@
                         <h2>Built to satisfy the judging checklist</h2>
                         <p>Gemini agent runtime, Google ADK deployment path, MongoDB Atlas partner MCP, and verifiable product quality.</p>
                     </div>
-                    <span class="section-meta">Submit/video pending</span>
+                    <span class="section-meta" id="submission-meta">Hosted live · video pending</span>
                 </div>
                 <div class="proof-grid">
                     <article class="proof-card proof-card--ready">
-                        <span class="proof-card__status">Implemented</span>
+                        <span class="proof-card__status" id="proof-gemini-status">Implemented</span>
                         <h3>Gemini multi-agent runtime</h3>
                         <p>Root ADK orchestrator delegates to corporate, crypto, OSINT, memory, and optional MongoDB MCP specialists.</p>
                     </article>
                     <article class="proof-card proof-card--ready">
-                        <span class="proof-card__status">Ready</span>
+                        <span class="proof-card__status" id="proof-cloud-status">Deployed</span>
                         <h3>Google Cloud deployment path</h3>
-                        <p>Cloud Run service and ADK Agent Engine deployment commands are prepared for production credentials.</p>
+                        <p id="proof-cloud-evidence">Cloud Run serves the dashboard and Vertex AI Agent Engine hosts the ADK app object.</p>
                     </article>
                     <article class="proof-card proof-card--ready">
-                        <span class="proof-card__status">Integrated</span>
+                        <span class="proof-card__status" id="proof-mcp-status">Integrated</span>
                         <h3>MongoDB Atlas MCP</h3>
-                        <p>Official `mongodb-mcp-server` runs through ADK `McpToolset` when an Atlas connection string is configured.</p>
+                        <p>Official mongodb-mcp-server runs through ADK McpToolset when an Atlas connection string is configured.</p>
                     </article>
                     <article class="proof-card proof-card--ready">
-                        <span class="proof-card__status">Verified</span>
+                        <span class="proof-card__status" id="proof-quality-status">Verified</span>
                         <h3>Quality gate</h3>
                         <p>Automated architecture, service, dashboard fallback, and MCP construction tests keep the demo stable.</p>
                     </article>
@@ -292,8 +330,8 @@
                 </div>
                 <div class="section-heading-row">
                     <div>
-                        <h2>Run a trust investigation</h2>
-                        <p>The chat surface is wired to the ADK orchestrator and preserves a session-level audit trail.</p>
+                        <h2>Run the judge demo path</h2>
+                        <p>The chat surface is wired to the ADK orchestrator, specialist tools, MongoDB-backed memory, and a session-level audit trail.</p>
                     </div>
                 </div>
                 <div class="chat-panel glass-panel">
@@ -308,7 +346,12 @@
                                 </svg>
                             </div>
                             <h3>Vartovii Trust Agent</h3>
-                            <p>Start with a target entity and the agent will route the case through specialist tools, evidence memory, and risk scoring.</p>
+                            <p>Start with one of the judge prompts below. The agent should route the case, use tools, return evidence, and explain the decision.</p>
+                            <div class="demo-path">
+                                <span>1. Pick target</span>
+                                <span>2. Route specialists</span>
+                                <span>3. Return decision</span>
+                            </div>
                         </div>
                     </div>
 
@@ -323,20 +366,20 @@
 
                     <!-- Quick action buttons -->
                     <div class="chat-quick-actions">
-                        <button class="quick-btn" data-prompt="Investigate Wirecard as an employer. What is their trust score and what happened to them?">
-                            Analyze Wirecard
+                        <button class="quick-btn" data-prompt="Run a judge-ready investigation for Wirecard. Show the agent route, trust score, evidence, and final decision.">
+                            Judge path: Wirecard
                         </button>
-                        <button class="quick-btn" data-prompt="What is Bitcoin's trust score? Give me the full breakdown.">
-                            Bitcoin trust score
+                        <button class="quick-btn" data-prompt="Explain how MongoDB Atlas and MCP improve this trust investigation workflow.">
+                            Prove MCP value
                         </button>
                         <button class="quick-btn" data-prompt="Scan for all CRITICAL-risk entities across companies and crypto. What patterns do you see?">
-                            Find fraud patterns
+                            Critical risk scan
                         </button>
-                        <button class="quick-btn" data-prompt="Compare Google and Apple as employers. Which one is better?">
-                            Compare Google vs Apple
+                        <button class="quick-btn" data-prompt="Compare Google and Apple as employers using trust score, review sentiment, and risk signals.">
+                            Employer comparison
                         </button>
-                        <button class="quick-btn" data-prompt="Show me the top 5 most trusted employers in the database.">
-                            Top employers
+                        <button class="quick-btn" data-prompt="Give a 60-second investor-style summary of why Vartovii is more than a chatbot.">
+                            60-sec summary
                         </button>
                     </div>
 
