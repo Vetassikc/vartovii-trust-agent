@@ -61,6 +61,11 @@ async def test_audit_fallback_returns_demo_events():
     assert result["events"][0]["agent"] == "vartovii_orchestrator"
 
 
+def test_public_audit_model_metadata_uses_active_policy():
+    assert dashboard_api._public_model_used("gemini-1.5-pro") == dashboard_api.AIConfig.ADK_MODEL
+    assert dashboard_api._public_model_used("mongodb-mcp-server") == "mongodb-mcp-server"
+
+
 @pytest.mark.asyncio
 async def test_health_check_exposes_model_metadata_without_secrets():
     result = await dashboard_api.health_check()
@@ -80,10 +85,23 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
     assert result["submission"]["demo_video"] == "pending"
     assert result["agent_engine"]["status"] in {"deployed", "deployable"}
     assert "reasoningEngines" in result["agent_engine"]["resource"]
-    assert result["quality"]["test_count"] == 56
+    assert result["quality"]["test_count"] == 60
     assert {item["name"] for item in result["requirements"]} == {
         "Gemini-powered AI agent",
         "Google Cloud Agent Builder path",
         "Partner MCP server",
         "Hosted production service",
     }
+
+
+@pytest.mark.asyncio
+async def test_judge_trace_fallback_exposes_single_proof_bundle():
+    result = await dashboard_api.judge_trace()
+
+    assert result["source"] == "mock"
+    assert result["scenario"]["track"] == "MongoDB"
+    assert result["decision"]["entity_name"] == "Wirecard AG"
+    assert result["runtime"]["agent_model"].startswith("gemini-")
+    assert result["mcp_proof"]["server"] == "mongodb-mcp-server"
+    assert [step["step"] for step in result["trace"]] == [1, 2, 3, 4, 5]
+    assert result["audit_events"]

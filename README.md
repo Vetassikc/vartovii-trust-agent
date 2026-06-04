@@ -11,7 +11,7 @@
   <a href="https://www.mongodb.com/atlas"><img src="https://img.shields.io/badge/MongoDB_Atlas-MCP_Server-47A248?logo=mongodb&logoColor=white" alt="MongoDB Atlas"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Protocol-FF6F00?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiPuKalDwvdGV4dD48L3N2Zz4=&logoColor=white" alt="MCP"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
-  <a href="#testing"><img src="https://img.shields.io/badge/Tests-56_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/Tests-60_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
 </p>
 
 ---
@@ -96,7 +96,7 @@ graph TB
 | 📋 **Full Audit Trail** | Every agent action logged for compliance — who did what, when, which model, latency |
 | 🔍 **OSINT Grounding** | Real-time web research via Google Search Grounding for entities not in database |
 | 📊 **28 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, similarity search, network risk, investigation management |
-| 🧪 **56 Automated Tests** | Architecture validation, MCP construction, tool contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
+| 🧪 **60 Automated Tests** | Architecture validation, MCP construction, tool contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
 
 ---
 
@@ -137,6 +137,16 @@ This populates your MongoDB Atlas cluster with:
 - 🏢 Corporate entities with trust scores, reviews, vacancy data
 - 🪙 Crypto projects with tokenomics, on-chain metrics, holder distributions
 - 🔗 Wallet records and transaction histories
+
+To restore the non-destructive judge proof path without dropping core
+collections, run:
+
+```bash
+python scripts/seed_judge_evidence.py
+```
+
+This upserts the Wirecard judge investigation, replayable audit events, and
+normalizes legacy audit model labels to the active Gemini policy.
 
 ### Run the Agent
 
@@ -303,10 +313,10 @@ pytest tests/ -v --tb=short
 
 | Test Suite | Tests | Coverage |
 |-----------|-------|----------|
-| `test_agent.py` | 36 | Agent topology, tool registration, MCP integration, fallback chains |
-| `test_dashboard_api.py` | 7 | Dashboard mock fallback, readiness endpoint, health model metadata, leaderboard and entity detail contracts |
+| `test_agent.py` | 38 | Agent topology, tool registration, MCP integration, fallback chains, audit model policy |
+| `test_dashboard_api.py` | 9 | Dashboard mock fallback, readiness endpoint, judge trace, health model metadata, leaderboard and entity detail contracts |
 | `test_services.py` | 13 | Model runtime, routing adapter, telemetry, config validation |
-| **Total** | **56** | Architecture, tools, dashboard API, MongoDB fallback/readiness, services |
+| **Total** | **60** | Architecture, tools, dashboard API, MongoDB fallback/readiness, services |
 
 Key test categories:
 - ✅ **Agent architecture** — verifies 5-agent topology, correct tool assignment

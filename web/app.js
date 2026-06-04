@@ -18,6 +18,7 @@
         investigations: apiUrl('/api/investigations'),
         audit:          apiUrl('/api/audit'),
         readiness:      apiUrl('/api/readiness'),
+        judgeTrace:     apiUrl('/api/judge-trace'),
         chat:           apiUrl('/api/chat'),
         entityCompany:  apiUrl('/api/entity/company/'),
         entityCrypto:   apiUrl('/api/entity/crypto/'),
@@ -414,6 +415,10 @@
             });
             setTypingIndicator(false);
             addChatMessage('agent', data.response || 'No response received.', data.agent);
+            loadStats();
+            loadInvestigations();
+            loadAudit();
+            loadJudgeTrace();
         } catch (err) {
             setTypingIndicator(false);
             const message = err.name === 'AbortError'
@@ -463,7 +468,82 @@
     }
 
     // ════════════════════════════════════════════════════════════
-    //  4. LEADERBOARD
+    //  4. JUDGE EXECUTION TRACE
+    // ════════════════════════════════════════════════════════════
+    async function loadJudgeTrace() {
+        const summaryEl = $('#judge-trace-summary');
+        const stepsEl = $('#judge-trace-steps');
+        const mcpEl = $('#judge-trace-mcp');
+        if (!summaryEl || !stepsEl || !mcpEl) return;
+
+        try {
+            const data = await apiFetch(API.judgeTrace);
+            const decision = data.decision || {};
+            const runtime = data.runtime || {};
+            const risk = decision.risk_level || 'UNKNOWN';
+            const riskCls = riskClass(risk);
+            const score = Math.round(decision.trust_score || 0);
+            const color = trustColor(score);
+
+            summaryEl.innerHTML = `
+                <div class="trace-decision">
+                    <div>
+                        <span class="trace-label">Saved decision</span>
+                        <h3>${escapeHtml(decision.entity_name || 'Judge scenario')}</h3>
+                        <p>${escapeHtml(decision.summary || 'Decision summary pending.')}</p>
+                    </div>
+                    <div class="trace-score" style="color:${color}">${score}</div>
+                    <span class="risk-badge risk-badge--${riskCls}">${escapeHtml(risk)}</span>
+                </div>
+                <div class="trace-runtime">
+                    <span>${escapeHtml(runtime.agent_runtime || 'google_adk')}</span>
+                    <span>${escapeHtml(runtime.agent_model || 'gemini')}</span>
+                    <span>${runtime.mcp_configured ? 'MCP configured' : 'MCP ready'}</span>
+                    <span>${escapeHtml(data.source || 'source')}</span>
+                </div>
+            `;
+
+            stepsEl.innerHTML = (data.trace || []).map(step => `
+                <div class="trace-step">
+                    <span class="trace-step__num">${String(step.step || '').padStart(2, '0')}</span>
+                    <div>
+                        <strong>${escapeHtml(step.agent || 'agent')}</strong>
+                        <span>${escapeHtml(step.action || '')}</span>
+                        <small>${escapeHtml(step.evidence || '')}</small>
+                    </div>
+                </div>
+            `).join('');
+
+            const mcp = data.mcp_proof || {};
+            const counts = mcp.collection_counts || {};
+            const auditEvents = data.audit_events || [];
+            const latestAudit = auditEvents[0] || {};
+            mcpEl.innerHTML = `
+                <div class="trace-mcp__header">
+                    <span class="mcp-proof__tag">MongoDB MCP proof</span>
+                    <strong>${escapeHtml(mcp.server || 'mongodb-mcp-server')}</strong>
+                </div>
+                <p>${escapeHtml(mcp.policy || 'MCP supports ad-hoc Atlas inspection for judge verification.')}</p>
+                <div class="trace-counts">
+                    <span>${Number(counts.companies || 0)} companies</span>
+                    <span>${Number(counts.crypto_projects || 0)} crypto projects</span>
+                    <span>${Number(counts.investigations || 0)} investigations</span>
+                    <span>${Number(counts.audit_log || 0)} audit events</span>
+                </div>
+                <div class="trace-audit-sample">
+                    <span>Latest audit</span>
+                    <strong>${escapeHtml(latestAudit.agent || 'memory_agent')}</strong>
+                    <small>${escapeHtml(latestAudit.action || 'audit pending')} · ${escapeHtml(latestAudit.model_used || runtime.agent_model || '')}</small>
+                </div>
+            `;
+        } catch (err) {
+            console.warn('Judge trace load failed:', err);
+            summaryEl.innerHTML = '<p class="trace-error">Judge trace could not be loaded.</p>';
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  5. LEADERBOARD
     // ════════════════════════════════════════════════════════════
     async function loadLeaderboard(type = currentLeaderboardType) {
         currentLeaderboardType = type;
@@ -583,7 +663,7 @@
     }
 
     // ════════════════════════════════════════════════════════════
-    //  5. ENTITY DETAIL MODAL
+    //  6. ENTITY DETAIL MODAL
     // ════════════════════════════════════════════════════════════
     async function openEntityModal(type, slug) {
         const modal = $('#entity-modal');
@@ -681,7 +761,7 @@
     }
 
     // ════════════════════════════════════════════════════════════
-    //  6. INVESTIGATIONS
+    //  7. INVESTIGATIONS
     // ════════════════════════════════════════════════════════════
     async function loadInvestigations() {
         const timeline = $('#investigations-timeline');
@@ -726,7 +806,7 @@
     }
 
     // ════════════════════════════════════════════════════════════
-    //  7. AUDIT LOG
+    //  8. AUDIT LOG
     // ════════════════════════════════════════════════════════════
     async function loadAudit() {
         const list = $('#audit-list');
@@ -820,6 +900,7 @@ function getAgentIcon(agent) {
         loadLeaderboard();
         loadInvestigations();
         loadAudit();
+        loadJudgeTrace();
 
         // Init interactive components
         initChat();

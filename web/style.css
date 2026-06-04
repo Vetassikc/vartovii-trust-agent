@@ -1129,7 +1129,180 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   6. LEADERBOARD
+   6. JUDGE EXECUTION TRACE
+   ══════════════════════════════════════════════════════════════════ */
+.judge-trace-section {
+    padding: 0 0 var(--section-gap);
+    position: relative;
+    z-index: 1;
+}
+.judge-trace-panel {
+    padding: 1.25rem;
+    display: grid;
+    grid-template-columns: 1.15fr 1.25fr 1fr;
+    gap: 1rem;
+    align-items: stretch;
+}
+.trace-summary,
+.trace-steps,
+.trace-mcp {
+    min-width: 0;
+}
+.trace-decision {
+    min-height: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.8rem;
+    align-items: start;
+    padding: 1rem;
+    border: 1px solid rgba(214,181,109,0.14);
+    border-radius: 8px;
+    background: rgba(214,181,109,0.045);
+}
+.trace-decision .risk-badge {
+    grid-column: 1 / -1;
+    width: fit-content;
+}
+.trace-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.trace-decision h3 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--text-primary);
+}
+.trace-decision p {
+    margin-top: 0.45rem;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+.trace-score {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+.trace-runtime {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+.trace-runtime span,
+.trace-counts span {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255,255,255,0.025);
+}
+.trace-steps {
+    display: grid;
+    gap: 0.55rem;
+}
+.trace-step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 0.7rem;
+    padding: 0.7rem;
+    border-radius: 8px;
+    border: 1px solid rgba(126,205,195,0.12);
+    background: rgba(126,205,195,0.035);
+}
+.trace-step__num {
+    width: 32px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: 1px solid rgba(126,205,195,0.18);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+.trace-step strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.78rem;
+}
+.trace-step span:not(.trace-step__num) {
+    display: block;
+    margin-top: 0.08rem;
+    color: var(--text-secondary);
+    font-size: 0.73rem;
+}
+.trace-step small {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    line-height: 1.35;
+}
+.trace-mcp {
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(112,183,131,0.14);
+    background: rgba(112,183,131,0.035);
+}
+.trace-mcp__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+.trace-mcp__header strong {
+    color: var(--text-primary);
+    font-size: 0.78rem;
+}
+.trace-mcp p {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+.trace-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+}
+.trace-audit-sample {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--glass-border);
+}
+.trace-audit-sample span,
+.trace-audit-sample small {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+.trace-audit-sample strong {
+    display: block;
+    margin: 0.2rem 0;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+}
+.trace-error {
+    color: var(--red);
+    font-size: 0.8rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. LEADERBOARD
    ══════════════════════════════════════════════════════════════════ */
 .leaderboard-section {
     padding: 0 0 var(--section-gap);
@@ -1760,6 +1933,12 @@ body {
     .judge-scorecard {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .judge-trace-panel {
+        grid-template-columns: 1fr 1fr;
+    }
+    .trace-mcp {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (max-width: 900px) {
@@ -1773,6 +1952,12 @@ body {
         align-items: flex-start;
         flex-direction: column;
         gap: 0.75rem;
+    }
+    .judge-trace-panel {
+        grid-template-columns: 1fr;
+    }
+    .trace-mcp {
+        grid-column: auto;
     }
     .leaderboard-table .th-info { display: none; }
     .leaderboard-table td:nth-child(5) { display: none; }

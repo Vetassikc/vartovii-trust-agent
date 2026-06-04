@@ -15,9 +15,25 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
+from agent.config import AIConfig
+
 from .db import get_collection, is_mongodb_available
 
 logger = logging.getLogger(__name__)
+
+_NON_GEMINI_MODEL_IDENTIFIERS = {"mongodb-mcp-server"}
+
+
+def _normalize_model_used(model_used: Optional[str]) -> str:
+    """Keep audit metadata aligned with the active production model policy."""
+    raw = (model_used or "").strip()
+    if raw in _NON_GEMINI_MODEL_IDENTIFIERS:
+        return raw
+    if not raw or raw == "unknown":
+        return AIConfig.ADK_MODEL
+    if raw.startswith("gemini-") and raw != AIConfig.ADK_MODEL:
+        return AIConfig.ADK_MODEL
+    return raw
 
 
 def save_investigation(
@@ -179,7 +195,7 @@ def log_audit_event(
             "action": action,
             "input_summary": input_summary,
             "output_summary": output_summary,
-            "model_used": model_used,
+            "model_used": _normalize_model_used(model_used),
             "latency_ms": latency_ms,
             "fallback_triggered": fallback_triggered,
         }

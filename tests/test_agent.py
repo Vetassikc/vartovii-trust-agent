@@ -162,6 +162,20 @@ class TestADKInstructionOverride:
         assert set(AIConfig.ADK_INSTRUCTION_ENV_KEYS.keys()) == expected
 
 
+class TestAuditModelPolicy:
+    """Verify audit metadata cannot drift from the active model policy."""
+
+    def test_hallucinated_gemini_model_is_normalized(self):
+        from agent.tools.investigation_tools import _normalize_model_used
+
+        assert _normalize_model_used("gemini-1.5-pro") == AIConfig.ADK_MODEL
+
+    def test_mongodb_mcp_marker_is_preserved(self):
+        from agent.tools.investigation_tools import _normalize_model_used
+
+        assert _normalize_model_used("mongodb-mcp-server") == "mongodb-mcp-server"
+
+
 # ============================================
 # Tool Function Tests
 # ============================================

@@ -99,7 +99,7 @@
                             <span><strong>Vertex</strong> Agent Engine</span>
                             <span><strong>5</strong> core agents</span>
                             <span><strong>28</strong> custom tools</span>
-                            <span><strong>56</strong> tests</span>
+                            <span><strong>60</strong> tests</span>
                             <span><strong>MCP</strong> MongoDB Atlas</span>
                         </div>
                         <div class="judge-scorecard" aria-label="Judging criteria alignment">
@@ -398,7 +398,37 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             6. TRUST LEADERBOARD — /api/leaderboard
+             6. JUDGE EXECUTION TRACE — /api/judge-trace
+        ═══════════════════════════════════════════════════════ -->
+        <section class="judge-trace-section" id="judge-trace">
+            <div class="container">
+                <div class="section-eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Judge Evidence Trace
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>One run, full proof path</h2>
+                        <p>Compact execution evidence for the judging checklist: route, tools, MCP availability, saved decision, and audit trail.</p>
+                    </div>
+                    <span class="section-meta">/api/judge-trace</span>
+                </div>
+                <div class="judge-trace-panel glass-panel">
+                    <div class="trace-summary" id="judge-trace-summary">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="trace-steps" id="judge-trace-steps">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="trace-mcp" id="judge-trace-mcp">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
+             7. TRUST LEADERBOARD — /api/leaderboard
         ═══════════════════════════════════════════════════════ -->
         <section class="leaderboard-section" id="leaderboard">
             <div class="container">
