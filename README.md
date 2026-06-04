@@ -27,6 +27,14 @@
 
 **Vartovii reduces this to seconds.** A team of specialized AI agents collaborates to analyze companies and crypto projects across multiple dimensions, producing a unified Trust Score with full audit trail — all persisted in MongoDB Atlas.
 
+### Related Product Context
+
+This hackathon build is a new Google ADK + MongoDB MCP agent layer for the
+broader [Vartovii trust intelligence product](https://sentryanalytic.com/).
+The main product covers corporate and crypto trust research, score coverage,
+reports, watchlists, and forensic workflows; this submission focuses on the
+judge-verifiable agent route, MCP proof path, and MongoDB-backed audit memory.
+
 ---
 
 ## 🏗️ Architecture
