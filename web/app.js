@@ -19,6 +19,7 @@
         audit:          apiUrl('/api/audit'),
         readiness:      apiUrl('/api/readiness'),
         judgeTrace:     apiUrl('/api/judge-trace'),
+        liveProof:      apiUrl('/api/live-proof?slug=ethereum'),
         chat:           apiUrl('/api/chat'),
         entityCompany:  apiUrl('/api/entity/company/'),
         entityCrypto:   apiUrl('/api/entity/crypto/'),
@@ -152,6 +153,23 @@
         return '#d46a59';
     }
 
+    function renderTrustGauge(score, label = 'trust') {
+        const safeScore = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+        const color = trustColor(safeScore);
+        return `
+            <div class="trust-gauge" style="--score:${safeScore};--gauge-color:${color}" aria-label="${safeScore} out of 100 ${escapeHtml(label)} score">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="trust-gauge__track" cx="60" cy="60" r="48"></circle>
+                    <circle class="trust-gauge__progress" cx="60" cy="60" r="48"></circle>
+                </svg>
+                <div class="trust-gauge__value">
+                    <strong>${safeScore}</strong>
+                    <span>${escapeHtml(label)}</span>
+                </div>
+            </div>
+        `;
+    }
+
     // ─── Utility: Trust score → value class ───
     function trustValueClass(score) {
         if (score >= 70) return 'stat-card__value--green';
@@ -171,6 +189,21 @@
         if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatCurrency(value, digits = 2) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return 'not reported';
+        return `$${number.toLocaleString(undefined, {
+            minimumFractionDigits: number < 10 ? Math.min(digits, 4) : 0,
+            maximumFractionDigits: number < 10 ? Math.max(digits, 4) : digits,
+        })}`;
+    }
+
+    function formatPercent(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return 'not reported';
+        return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`;
     }
 
     function shortResourceName(resource) {
@@ -269,6 +302,83 @@
             if ($('#proof-quality-status') && hostedReq) $('#proof-quality-status').textContent = humanStatus(hostedReq.status);
         } catch (err) {
             console.warn('Readiness load failed:', err);
+        }
+    }
+
+    async function loadLiveProof() {
+        const gaugeEl = $('#live-proof-gauge');
+        const factorsEl = $('#live-proof-factors');
+        const traceEl = $('#live-proof-trace');
+        if (!gaugeEl || !factorsEl || !traceEl) return;
+
+        try {
+            const data = await apiFetch(API.liveProof, { timeoutMs: 30_000 });
+            const evidence = data.live_evidence || {};
+            const market = evidence.market || {};
+            const freshness = data.source_freshness || {};
+            const persistence = data.mongodb_proof || {};
+            const adjusted = evidence.live_adjusted_trust_score ?? evidence.base_trust_score ?? 0;
+            const delta = Number(evidence.live_trust_delta || 0);
+            const priceChange = Number(market.price_change_24h_pct);
+            const statusEl = $('#live-proof-status');
+
+            gaugeEl.innerHTML = `
+                ${renderTrustGauge(adjusted, 'live trust')}
+                <div class="live-proof-score__caption">
+                    <strong>${delta >= 0 ? '+' : ''}${delta}</strong>
+                    <span>market signal delta</span>
+                </div>
+            `;
+
+            if (statusEl) {
+                statusEl.textContent = data.live_api_called
+                    ? 'CoinGecko live'
+                    : 'Atlas cache';
+            }
+            if ($('#live-proof-target')) {
+                const symbol = data.target?.symbol ? ` (${data.target.symbol})` : '';
+                $('#live-proof-target').textContent = `${data.target?.name || 'Ethereum'}${symbol}`;
+            }
+            if ($('#live-proof-price')) $('#live-proof-price').textContent = formatCurrency(market.price_usd, 4);
+            if ($('#live-proof-change')) {
+                $('#live-proof-change').textContent = formatPercent(priceChange);
+                $('#live-proof-change').style.color = priceChange < 0 ? 'var(--orange)' : 'var(--green)';
+            }
+            if ($('#live-proof-market-cap')) $('#live-proof-market-cap').textContent = formatCurrency(market.market_cap_usd, 0);
+            if ($('#live-proof-freshness')) {
+                const cacheLabel = freshness.cache_status || evidence.cache_status || data.source || 'live evidence';
+                $('#live-proof-freshness').textContent = `${cacheLabel} · ${formatTime(freshness.fetched_at || evidence.fetched_at)}`;
+            }
+            if ($('#live-proof-persistence')) {
+                const state = persistence.persisted
+                    ? `Persisted in ${persistence.collection}`
+                    : persistence.status || 'MongoDB persistence pending';
+                $('#live-proof-persistence').textContent = state;
+            }
+
+            factorsEl.innerHTML = (evidence.factors || []).map(factor => `
+                <div class="live-factor">
+                    <span>${escapeHtml(factor.label || 'Signal')}</span>
+                    <strong>${escapeHtml(factor.value || 'not reported')}</strong>
+                    <small>${escapeHtml(factor.impact || '')}</small>
+                </div>
+            `).join('');
+
+            traceEl.innerHTML = (data.agent_trace || []).map(step => `
+                <div class="live-trace-step">
+                    <span>${String(step.step || '').padStart(2, '0')}</span>
+                    <div>
+                        <strong>${escapeHtml(step.agent || 'agent')}</strong>
+                        <p>${escapeHtml(step.action || '')}</p>
+                        <small>${escapeHtml(step.evidence || '')}</small>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.warn('Live proof load failed:', err);
+            gaugeEl.innerHTML = '<p class="trace-error">Live proof could not be loaded.</p>';
+            factorsEl.innerHTML = '';
+            traceEl.innerHTML = '';
         }
     }
 
@@ -419,6 +529,7 @@
             loadInvestigations();
             loadAudit();
             loadJudgeTrace();
+            loadLiveProof();
         } catch (err) {
             setTypingIndicator(false);
             const message = err.name === 'AbortError'
@@ -657,6 +768,7 @@
                 loadStats();
                 loadInvestigations();
                 loadAudit();
+                loadLiveProof();
             }
             timerEl.textContent = `Auto-refresh in ${refreshCountdown}s`;
         }, 1000);
@@ -901,6 +1013,7 @@ function getAgentIcon(agent) {
         loadInvestigations();
         loadAudit();
         loadJudgeTrace();
+        loadLiveProof();
 
         // Init interactive components
         initChat();

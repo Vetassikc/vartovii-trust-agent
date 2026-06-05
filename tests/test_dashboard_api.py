@@ -85,13 +85,15 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
     assert result["submission"]["demo_video"] == "pending"
     assert result["agent_engine"]["status"] in {"deployed", "deployable"}
     assert "reasoningEngines" in result["agent_engine"]["resource"]
-    assert result["quality"]["test_count"] == 60
+    assert result["quality"]["test_count"] == 61
     assert {item["name"] for item in result["requirements"]} == {
         "Gemini-powered AI agent",
         "Google Cloud Agent Builder path",
         "Partner MCP server",
         "Hosted production service",
+        "Live evidence proof",
     }
+    assert result["quality"]["live_sources"] == ["CoinGecko"]
 
 
 @pytest.mark.asyncio
@@ -105,3 +107,33 @@ async def test_judge_trace_fallback_exposes_single_proof_bundle():
     assert result["mcp_proof"]["server"] == "mongodb-mcp-server"
     assert [step["step"] for step in result["trace"]] == [1, 2, 3, 4, 5]
     assert result["audit_events"]
+
+
+@pytest.mark.asyncio
+async def test_live_proof_fetches_coingecko_evidence_without_secrets(monkeypatch):
+    def fake_fetch(slug):
+        return {
+            "available": True,
+            "provider": "coingecko",
+            "coingecko_id": slug,
+            "requested_slug": slug,
+            "fetched_at": "2026-06-05T10:00:00+00:00",
+            "source_url": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum",
+            "price_usd": 3900.25,
+            "market_cap_usd": 470000000000,
+            "volume_24h_usd": 21000000000,
+            "price_change_24h_pct": -11.2,
+        }
+
+    monkeypatch.setattr(dashboard_api, "fetch_coingecko_market_data", fake_fetch)
+
+    result = await dashboard_api.live_proof(slug="ethereum", force=True)
+
+    assert result["status"] == "ready"
+    assert result["live_api_called"] is True
+    assert result["target"]["slug"] == "ethereum"
+    assert result["live_evidence"]["base_trust_score"] == 94
+    assert result["live_evidence"]["live_trust_delta"] == -4
+    assert result["live_evidence"]["live_adjusted_trust_score"] == 90
+    assert result["mongodb_proof"]["status"] == "skipped_no_mongodb"
+    assert [step["step"] for step in result["agent_trace"]] == [1, 2, 3, 4, 5]

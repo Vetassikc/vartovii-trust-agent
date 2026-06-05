@@ -1,42 +1,40 @@
 # Production Rollout Verification Report
 
-**Date:** March 25, 2026
+**Date:** June 5, 2026
 **Service:** Vartovii Trust Intelligence Agent (ADK Multi-Agent)
 
 ## Rollout Evidence
 
 **Cloud Build:**
-- Build ID: `9653f7e3-441c-4239-9ecd-1ae4427b0afe`
+- Build ID: `9475062f-a45f-4102-a64c-c25d334e2337`
 - Status: `SUCCESS`
-- Finish time: `2026-03-25T08:56:20.835245Z`
+- Image digest: `sha256:a3576f6f1354f7d09aad12dba3f2003f56d382455f5a361d016a483fee4037c8`
 
 **Cloud Run:**
-- Service: `sentry-app`
-- Latest revision: `sentry-app-00527-62h`
-- Service URL: `https://sentry-app-4p7rbtt5yq-oa.a.run.app`
-- Region: `europe-west6`
+- Service: `vartovii-trust-agent`
+- Latest verified revision: `vartovii-trust-agent-00032-48b`
+- Service URL: `https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app`
+- Region: `europe-west1`
 
 ## Runtime Verification
 
 Confirmed via `gcloud run services describe`:
 - `ADK_ENABLED=true` ✅
-- `COMMIT_SHA=dc711a2` ✅
 - All secrets bound from Secret Manager ✅
+- `/api/health` returns MongoDB, Gemini, ADK, and MCP status ✅
+- `/api/readiness` returns 61-test quality gate and Agent Engine path ✅
+- `/api/judge-trace` returns route, MCP proof, decision, and audit evidence ✅
+- `/api/live-proof?slug=ethereum` returns CoinGecko evidence and Atlas cache proof ✅
 
 ## Live Chat Verification
 
-**Probe 1:**
-- Response: `ok`
-- ADK hit upstream 503 (model capacity)
-- **Graceful fallback to legacy tools** ✅
-
-**Probe 2:**
-- Response: `ok`
-- `execution.adk_agent=true` ✅
-- `execution.adk_tools=["transfer_to_agent", "search_company", "get_trust_score"]` ✅
+**Probe:**
+- `/api/chat` returned a live `vartovii_orchestrator` response ✅
+- File-mode and hosted UI smoke checks returned no failed fetches ✅
+- Desktop and mobile checks showed zero horizontal overflow ✅
 
 ## Conclusion
 
 ✅ ADK multi-agent is live in production
 ✅ Graceful degradation on upstream failures
-✅ Tool calls executing successfully
+✅ Tool calls and proof endpoints executing successfully

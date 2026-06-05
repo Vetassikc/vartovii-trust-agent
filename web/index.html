@@ -42,6 +42,7 @@
             <nav class="header__nav" aria-label="Main navigation">
                 <a href="#dashboard" class="header__link header__link--active">Console</a>
                 <a href="#evidence" class="header__link">Evidence</a>
+                <a href="#live-proof" class="header__link">Live Proof</a>
                 <a href="#chat" class="header__link">Agent</a>
                 <a href="#leaderboard" class="header__link">Leaderboard</a>
                 <a href="#architecture" class="header__link">Architecture</a>
@@ -99,7 +100,7 @@
                             <span><strong>Vertex</strong> Agent Engine</span>
                             <span><strong>5</strong> core agents</span>
                             <span><strong>28</strong> custom tools</span>
-                            <span><strong>60</strong> tests</span>
+                            <span><strong>61</strong> tests</span>
                             <span><strong>MCP</strong> MongoDB Atlas</span>
                         </div>
                         <div class="judge-scorecard" aria-label="Judging criteria alignment">
@@ -132,7 +133,16 @@
                         </div>
 
                         <div class="verdict-card">
-                            <div class="verdict-card__score">28</div>
+                            <div class="trust-gauge trust-gauge--hero" style="--score:28;--gauge-color:var(--red)" aria-label="Wirecard trust score 28 out of 100">
+                                <svg viewBox="0 0 120 120" aria-hidden="true">
+                                    <circle class="trust-gauge__track" cx="60" cy="60" r="48"></circle>
+                                    <circle class="trust-gauge__progress" cx="60" cy="60" r="48"></circle>
+                                </svg>
+                                <div class="trust-gauge__value">
+                                    <strong>28</strong>
+                                    <span>trust</span>
+                                </div>
+                            </div>
                             <div class="verdict-card__body">
                                 <span class="risk-badge risk-badge--critical">Critical risk</span>
                                 <p>Trust deficit detected across corporate history, review sentiment, and unresolved governance signals.</p>
@@ -320,7 +330,64 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             5. AI AGENT CHAT — POST /api/chat
+             5. LIVE EVIDENCE PROOF — /api/live-proof
+        ═══════════════════════════════════════════════════════ -->
+        <section class="live-proof-section" id="live-proof">
+            <div class="container">
+                <div class="section-eyebrow">
+                    <span class="eyebrow-dot eyebrow-dot--pulse"></span>
+                    Live Source Proof
+                </div>
+                <div class="section-heading-row">
+                    <div>
+                        <h2>CoinGecko signal, MongoDB memory, inspectable trace</h2>
+                        <p>One endpoint proves the agent can enrich a trust score with current market evidence, cache it in Atlas, and expose the reasoning path.</p>
+                    </div>
+                    <span class="section-meta">/api/live-proof?slug=ethereum</span>
+                </div>
+                <div class="live-proof-panel glass-panel">
+                    <div class="live-proof-score" id="live-proof-gauge">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="live-proof-market">
+                        <div class="live-proof-market__header">
+                            <span class="mcp-proof__tag" id="live-proof-status">Checking live source</span>
+                            <strong id="live-proof-target">Ethereum</strong>
+                        </div>
+                        <div class="live-proof-metrics">
+                            <div>
+                                <span>Live price</span>
+                                <strong id="live-proof-price">—</strong>
+                            </div>
+                            <div>
+                                <span>24h movement</span>
+                                <strong id="live-proof-change">—</strong>
+                            </div>
+                            <div>
+                                <span>Market cap</span>
+                                <strong id="live-proof-market-cap">—</strong>
+                            </div>
+                            <div>
+                                <span>Freshness</span>
+                                <strong id="live-proof-freshness">—</strong>
+                            </div>
+                        </div>
+                        <div class="live-proof-persistence" id="live-proof-persistence">
+                            MongoDB persistence pending
+                        </div>
+                    </div>
+                    <div class="live-proof-breakdown" id="live-proof-factors">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="live-proof-trace" id="live-proof-trace">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════
+             6. AI AGENT CHAT — POST /api/chat
         ═══════════════════════════════════════════════════════ -->
         <section class="chat-section" id="chat">
             <div class="container">
@@ -398,7 +465,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             6. JUDGE EXECUTION TRACE — /api/judge-trace
+             7. JUDGE EXECUTION TRACE — /api/judge-trace
         ═══════════════════════════════════════════════════════ -->
         <section class="judge-trace-section" id="judge-trace">
             <div class="container">
@@ -428,7 +495,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             7. TRUST LEADERBOARD — /api/leaderboard
+             8. TRUST LEADERBOARD — /api/leaderboard
         ═══════════════════════════════════════════════════════ -->
         <section class="leaderboard-section" id="leaderboard">
             <div class="container">
@@ -479,7 +546,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             7. RISK DISTRIBUTION PANEL
+             9. RISK DISTRIBUTION PANEL
         ═══════════════════════════════════════════════════════ -->
         <section class="risk-section" id="risk">
             <div class="container">
@@ -532,7 +599,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             8. INVESTIGATION HISTORY — /api/investigations
+             10. INVESTIGATION HISTORY — /api/investigations
         ═══════════════════════════════════════════════════════ -->
         <section class="investigations-section" id="investigations">
             <div class="container">
@@ -558,7 +625,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             9. ARCHITECTURE VISUALIZATION
+             11. ARCHITECTURE VISUALIZATION
         ═══════════════════════════════════════════════════════ -->
         <section class="arch-section" id="architecture">
             <div class="container">
@@ -705,7 +772,7 @@
                     <div class="arch-tech-stack">
                         <span class="arch-badge">Python 3.12</span>
                         <span class="arch-badge">FastAPI</span>
-                        <span class="arch-badge">Google ADK 1.x</span>
+                        <span class="arch-badge">Google ADK 2.0.0</span>
                         <span class="arch-badge">Vertex AI Gemini 3.5</span>
                         <span class="arch-badge">MongoDB Atlas</span>
                         <span class="arch-badge">Cloud Run</span>
@@ -717,7 +784,7 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             10. AUDIT LOG — /api/audit
+             12. AUDIT LOG — /api/audit
         ═══════════════════════════════════════════════════════ -->
         <section class="audit-section" id="audit">
             <div class="container">
@@ -742,32 +809,29 @@
         </section>
 
         <!-- ═══════════════════════════════════════════════════════
-             11. PRODUCT CONTEXT
+             13. PROJECT CONTEXT
         ═══════════════════════════════════════════════════════ -->
         <section class="product-context-section" id="product-context">
             <div class="container">
                 <div class="section-eyebrow">
                     <span class="eyebrow-dot"></span>
-                    Product Context
+                    Standalone Project Context
                 </div>
                 <div class="product-context-layout">
                     <div class="product-context-copy">
-                        <h2>Built as a new agent layer for the broader Vartovii trust product.</h2>
+                        <h2>Standalone hackathon build for evidence-first trust investigations.</h2>
                         <p>
-                            This hackathon build focuses the Vartovii evidence-first workflow on Google ADK,
-                            Gemini, Agent Engine, MongoDB Atlas, and the MongoDB MCP server. The main Vartovii
-                            product covers corporate and crypto trust research, score coverage, reports,
-                            watchlists, and forensic workflows.
+                            This project was built for the contest as a focused Google ADK, Gemini,
+                            Agent Engine, MongoDB Atlas, and MongoDB MCP implementation. The domain
+                            comes from trust research patterns, but the submitted agent, proof endpoints,
+                            UI, tests, deployment scripts, and documentation are packaged as a standalone
+                            hackathon project.
                         </p>
                     </div>
                     <div class="product-context-links" aria-label="Vartovii product links">
-                        <a href="https://sentryanalytic.com/" target="_blank" rel="noopener noreferrer">
-                            <span>Main product</span>
-                            <strong>sentryanalytic.com</strong>
-                        </a>
-                        <a href="https://sentryanalytic.com/docs" target="_blank" rel="noopener noreferrer">
-                            <span>Product docs</span>
-                            <strong>Trust workflow reference</strong>
+                        <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum" target="_blank" rel="noopener noreferrer">
+                            <span>Live proof API</span>
+                            <strong>CoinGecko, Atlas cache, trust delta</strong>
                         </a>
                         <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace" target="_blank" rel="noopener noreferrer">
                             <span>Judge trace API</span>
@@ -794,8 +858,7 @@
             </div>
             <p class="footer-tagline">Built for <strong>Google Cloud Rapid Agent Hackathon</strong> — MongoDB Track</p>
             <div class="footer-links">
-                <a href="https://sentryanalytic.com/" target="_blank" rel="noopener noreferrer">Main Product</a>
-                <a href="https://sentryanalytic.com/docs" target="_blank" rel="noopener noreferrer">Docs</a>
+                <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum" target="_blank" rel="noopener noreferrer">Live Proof</a>
                 <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace" target="_blank" rel="noopener noreferrer">Judge Trace</a>
                 <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness" target="_blank" rel="noopener noreferrer">Readiness</a>
                 <a href="https://github.com/Vetassikc/vartovii-trust-agent" target="_blank" rel="noopener noreferrer">

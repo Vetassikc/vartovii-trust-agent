@@ -15,12 +15,25 @@ Data source priority:
 """
 
 import logging
+import os
 from typing import Optional
 
 from .db import get_collection, is_mongodb_available
+from .live_data import (
+    COINGECKO_CACHE_TTL_SECONDS,
+    build_live_crypto_evidence,
+    fetch_coingecko_market_data,
+    is_cache_fresh,
+)
 from .mock_data import CRYPTO_PROJECTS, WALLETS
 
 logger = logging.getLogger(__name__)
+
+LIVE_DATA_ENABLED = os.getenv("VARTOVII_LIVE_DATA_ENABLED", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+}
 
 
 def _get_crypto_from_db(query: str) -> Optional[list]:
@@ -66,6 +79,88 @@ def _get_wallet_from_db(address: str) -> Optional[dict]:
     except Exception as e:
         logger.warning("MongoDB wallet query failed for '%s': %s", address, e)
         return None
+
+
+def _get_live_evidence_from_cache(slug: str) -> Optional[dict]:
+    """Read fresh CoinGecko evidence from MongoDB when available."""
+    if not is_mongodb_available():
+        return None
+
+    col = get_collection("live_evidence")
+    if col is None:
+        return None
+
+    try:
+        cached = col.find_one(
+            {"provider": "coingecko", "entity_type": "crypto", "slug": slug},
+            {"_id": 0},
+        )
+        if cached and is_cache_fresh(cached):
+            return cached.get("live_evidence")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("MongoDB live evidence cache read failed for '%s': %s", slug, exc)
+    return None
+
+
+def _persist_live_evidence(slug: str, live_evidence: dict) -> None:
+    """Persist fresh live evidence to MongoDB for MCP inspection."""
+    if not is_mongodb_available():
+        return
+
+    col = get_collection("live_evidence")
+    if col is None:
+        return
+
+    try:
+        col.update_one(
+            {"provider": "coingecko", "entity_type": "crypto", "slug": slug},
+            {
+                "$set": {
+                    "provider": "coingecko",
+                    "entity_type": "crypto",
+                    "slug": slug,
+                    "fetched_at": live_evidence.get("fetched_at"),
+                    "live_evidence": live_evidence,
+                    "cache_ttl_seconds": COINGECKO_CACHE_TTL_SECONDS,
+                }
+            },
+            upsert=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("MongoDB live evidence cache write failed for '%s': %s", slug, exc)
+
+
+def _maybe_enrich_crypto_project(slug: str, project: dict) -> dict:
+    """Optionally attach live CoinGecko evidence to a crypto tool response."""
+    if not LIVE_DATA_ENABLED:
+        return project
+
+    cached = _get_live_evidence_from_cache(slug)
+    if cached:
+        return {
+            **project,
+            "live_evidence": cached,
+            "source": "mongodb+coingecko_cache",
+        }
+
+    market = fetch_coingecko_market_data(slug)
+    if not market.get("available"):
+        return project
+
+    live_evidence = build_live_crypto_evidence(
+        slug=slug,
+        project=project,
+        market=market,
+        cache_status="coingecko_live",
+    )
+    _persist_live_evidence(slug, live_evidence)
+    return {
+        **project,
+        "live_evidence": live_evidence,
+        "live_trust_delta": live_evidence["live_trust_delta"],
+        "live_adjusted_trust_score": live_evidence["live_adjusted_trust_score"],
+        "source": "mongodb+coingecko_live" if is_mongodb_available() else "mock+coingecko_live",
+    }
 
 
 def search_crypto_projects(query: str) -> dict:
@@ -159,11 +254,12 @@ def get_crypto_trust_score(slug: str) -> dict:
                     {"slug": slug.strip().lower()}, {"_id": 0}
                 )
                 if project:
+                    project = _maybe_enrich_crypto_project(slug.strip().lower(), project)
                     return {
                         "found": True,
                         **project,
                         "ai_hint": "Use these REAL numbers in your response. Don't say 'if' — state the actual data.",
-                        "source": "mongodb",
+                        "source": project.get("source", "mongodb"),
                     }
             except Exception as e:
                 logger.warning("MongoDB get_crypto_trust_score failed: %s", e)
@@ -174,11 +270,12 @@ def get_crypto_trust_score(slug: str) -> dict:
     if not project:
         return {"found": False, "message": f"Project '{slug}' not found. Try searching first."}
 
+    project = _maybe_enrich_crypto_project(slug.strip().lower(), project)
     return {
         "found": True,
         **project,
         "ai_hint": "Use these REAL numbers in your response. Don't say 'if' — state the actual data.",
-        "source": "mock",
+        "source": project.get("source", "mock"),
     }
 
 

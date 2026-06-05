@@ -16,7 +16,7 @@ Vartovii Trust Intelligence Agent helps users investigate whether a company or c
 
 Trust research is still painfully manual. A user who wants to evaluate a company, employer, token, wallet, or suspicious project usually has to jump between search results, review sites, on-chain tools, databases, reports, and spreadsheets. The hard part is not only finding signals; it is turning scattered signals into a decision that can be explained and audited.
 
-Vartovii was built to make trust investigation fast, repeatable, and evidence-first. This hackathon submission focuses that idea into a new Google ADK and MongoDB MCP agent layer that can show its route, evidence, memory, and final decision.
+Vartovii was built to make trust investigation fast, repeatable, and evidence-first. This submission is a standalone hackathon build that focuses that idea into a Google ADK and MongoDB MCP agent workflow that can show its route, live source evidence, memory, and final decision.
 
 ## What It Does
 
@@ -29,14 +29,15 @@ For the judge demo, the system can run a Wirecard-style investigation path and e
 - The evidence considered.
 - MongoDB Atlas persistence.
 - MongoDB MCP proof path.
+- Live CoinGecko evidence with source freshness and trust-score delta.
 - Audit events with model, latency, and action metadata.
-- A final decision that can be inspected through the UI and `/api/judge-trace`.
+- A final decision that can be inspected through the UI, `/api/judge-trace`, and `/api/live-proof`.
 
 ## How We Built It
 
 The project is built around a Google ADK multi-agent graph. The root orchestrator uses Gemini model routing and delegates work to specialized `LlmAgent` agents. Structured tools query MongoDB Atlas for production workflows, while the optional MongoDB MCP specialist provides flexible ad-hoc database access for collection inspection, aggregations, and explain-plan style workflows.
 
-The hosted project runs on Google Cloud Run with a FastAPI backend and static web console. The repository also includes an Agent Engine deployment helper for the hosted ADK graph path. MongoDB Atlas stores evidence, entities, investigations, and audit events. The UI exposes readiness and judge-trace proof so judges can verify that the demo is backed by real runtime data.
+The hosted project runs on Google Cloud Run with a FastAPI backend and static web console. The repository also includes an Agent Engine deployment helper for the hosted ADK graph path. MongoDB Atlas stores evidence, entities, investigations, audit events, and live evidence cache records. The UI exposes readiness, judge-trace, and live-proof endpoints so judges can verify that the demo is backed by real runtime data.
 
 ## Google Cloud And Gemini
 
@@ -52,6 +53,8 @@ MongoDB Atlas is the evidence and memory layer for the agent. It stores companie
 
 The MongoDB MCP integration is used as a partner superpower: it gives the ADK graph a flexible database specialist that can inspect Atlas data beyond pre-built tool calls. This matters because real investigations often require unexpected database questions, not just fixed API endpoints.
 
+The live-proof path fetches current CoinGecko market evidence, computes a small trust-score delta from 24-hour movement, and persists the proof in MongoDB Atlas so the stored evidence can be inspected later through structured tools or MCP.
+
 ## What Makes It Different
 
 Most agent demos stop at a conversation. Vartovii is built around a verifiable investigation workflow:
@@ -59,9 +62,9 @@ Most agent demos stop at a conversation. Vartovii is built around a verifiable i
 - It plans and delegates through multiple agents.
 - It uses domain-specific tools rather than only free-form generation.
 - It stores investigation memory and audit events.
-- It exposes readiness and judge-trace endpoints.
+- It exposes readiness, judge-trace, and live-proof endpoints.
 - It shows MongoDB Atlas and MCP as part of the product story, not just as hidden infrastructure.
-- It connects to a broader trust intelligence product direction covering corporate research, crypto risk, reports, watchlists, and forensic workflows.
+- It is packaged as a standalone hackathon project rather than a generic demo page.
 
 ## Challenges We Ran Into
 
@@ -73,7 +76,8 @@ The hardest part was making the agent demo judge-verifiable. A normal chatbot re
 - Integrated MongoDB Atlas as evidence storage and audit memory.
 - Added an optional MongoDB MCP specialist for flexible database inspection.
 - Deployed the project on Google Cloud Run.
-- Added live readiness and judge-trace proof endpoints.
+- Added live readiness, judge-trace, and live-proof endpoints.
+- Added CoinGecko live evidence enrichment with MongoDB Atlas cache persistence.
 - Added model routing and fallback policy.
 - Added automated tests for the core agent, API, services, and MCP paths.
 - Improved the UI so the demo communicates trust investigation rather than generic chat.
@@ -96,6 +100,6 @@ Next, Vartovii can expand from the hackathon proof path into a production trust 
 
 - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
 - Repository: https://github.com/Vetassikc/vartovii-trust-agent
-- Main product context: https://sentryanalytic.com/
+- Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
 - Judge trace proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
 - Readiness proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness

@@ -27,6 +27,13 @@ from pymongo.database import Database
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from agent.config import AIConfig
+from agent.tools.live_data import (
+    COINGECKO_CACHE_TTL_SECONDS,
+    build_live_crypto_evidence,
+    cache_age_seconds,
+    fetch_coingecko_market_data,
+    is_cache_fresh,
+)
 from agent.tools.mock_data import (
     COMPANIES as MOCK_COMPANIES,
     CRYPTO_PROJECTS as MOCK_CRYPTO_PROJECTS,
@@ -416,6 +423,180 @@ def _mock_entity_detail(entity_type: str, slug: str) -> dict[str, Any]:
     )
 
 
+def _get_crypto_project_for_live_proof(slug: str, db: Optional[Database]) -> Optional[dict[str, Any]]:
+    """Return a crypto project from MongoDB or demo data for live proof."""
+    normalized = slug.strip().lower()
+    if db is not None:
+        doc = db["crypto_projects"].find_one(
+            {
+                "$or": [
+                    {"slug": normalized},
+                    {"symbol": {"$regex": f"^{normalized}$", "$options": "i"}},
+                    {"name": {"$regex": f"^{normalized}$", "$options": "i"}},
+                ]
+            },
+            {"_id": 0},
+        )
+        if doc:
+            return doc
+
+    for project in MOCK_CRYPTO_PROJECTS.values():
+        if normalized in {
+            str(project.get("slug", "")).lower(),
+            str(project.get("symbol", "")).lower(),
+            str(project.get("name", "")).lower(),
+        }:
+            return dict(project)
+    return None
+
+
+def _load_live_evidence_cache(
+    db: Optional[Database],
+    slug: str,
+) -> Optional[dict[str, Any]]:
+    """Read a fresh live evidence cache record from MongoDB."""
+    if db is None:
+        return None
+    cached = db["live_evidence"].find_one(
+        {"provider": "coingecko", "entity_type": "crypto", "slug": slug},
+        {"_id": 0},
+    )
+    if cached and is_cache_fresh(cached):
+        return cached
+    return None
+
+
+def _persist_live_proof(
+    db: Optional[Database],
+    slug: str,
+    live_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist live evidence and return a public persistence proof."""
+    proof = {
+        "available": db is not None,
+        "persisted": False,
+        "collection": "live_evidence",
+        "document_key": f"coingecko:crypto:{slug}",
+    }
+    if db is None:
+        proof["status"] = "skipped_no_mongodb"
+        return proof
+
+    db["live_evidence"].update_one(
+        {"provider": "coingecko", "entity_type": "crypto", "slug": slug},
+        {
+            "$set": {
+                "provider": "coingecko",
+                "entity_type": "crypto",
+                "slug": slug,
+                "fetched_at": live_evidence.get("fetched_at"),
+                "cache_ttl_seconds": COINGECKO_CACHE_TTL_SECONDS,
+                "live_evidence": live_evidence,
+            }
+        },
+        upsert=True,
+    )
+
+    db["crypto_projects"].update_one(
+        {"slug": slug},
+        {
+            "$set": {
+                "live_enriched_at": live_evidence.get("fetched_at"),
+                "live_market": live_evidence.get("market", {}),
+                "live_trust_delta": live_evidence.get("live_trust_delta", 0),
+                "live_adjusted_trust_score": live_evidence.get(
+                    "live_adjusted_trust_score"
+                ),
+            }
+        },
+        upsert=False,
+    )
+
+    persisted = db["live_evidence"].find_one(
+        {"provider": "coingecko", "entity_type": "crypto", "slug": slug},
+        {"_id": 0, "fetched_at": 1, "live_evidence.live_adjusted_trust_score": 1},
+    )
+    proof["persisted"] = persisted is not None
+    proof["status"] = "persisted" if persisted else "write_not_confirmed"
+    proof["fetched_at"] = persisted.get("fetched_at") if persisted else None
+    return proof
+
+
+def _build_live_proof_response(
+    *,
+    slug: str,
+    project: Optional[dict[str, Any]],
+    live_evidence: dict[str, Any],
+    source: str,
+    cache_status: str,
+    mongodb_proof: dict[str, Any],
+    live_api_called: bool,
+    cache_age: Optional[int] = None,
+) -> dict[str, Any]:
+    """Build the public live-proof API response."""
+    market = live_evidence.get("market", {})
+    return {
+        "status": "ready" if market.get("available") else "degraded",
+        "source": source,
+        "live_api_called": live_api_called,
+        "target": {
+            "entity_type": "crypto",
+            "slug": slug,
+            "name": live_evidence.get("name") or (project or {}).get("name") or slug,
+            "symbol": live_evidence.get("symbol") or (project or {}).get("symbol"),
+        },
+        "source_freshness": {
+            "provider": "CoinGecko",
+            "cache_status": cache_status,
+            "fetched_at": live_evidence.get("fetched_at"),
+            "cache_age_seconds": cache_age,
+            "cache_ttl_seconds": COINGECKO_CACHE_TTL_SECONDS,
+            "source_url": market.get("source_url"),
+        },
+        "live_evidence": live_evidence,
+        "mongodb_proof": mongodb_proof,
+        "agent_trace": [
+            {
+                "step": 1,
+                "agent": "vartovii_orchestrator",
+                "action": f"Route live crypto proof request for {slug}",
+                "evidence": "ADK crypto specialist owns crypto market evidence.",
+            },
+            {
+                "step": 2,
+                "agent": "crypto_agent",
+                "action": "Fetch CoinGecko market signal or reuse fresh Atlas cache",
+                "evidence": (
+                    "CoinGecko live API called"
+                    if live_api_called
+                    else "Fresh MongoDB live_evidence cache reused"
+                ),
+            },
+            {
+                "step": 3,
+                "agent": "crypto_agent",
+                "action": "Convert market movement into trust-score delta",
+                "evidence": (
+                    f"{live_evidence.get('base_trust_score', 0)}/100 baseline "
+                    f"{live_evidence.get('live_trust_delta', 0):+d} delta"
+                ),
+            },
+            {
+                "step": 4,
+                "agent": "memory_agent",
+                "action": "Persist live evidence for audit and MCP inspection",
+                "evidence": mongodb_proof.get("status", "not persisted"),
+            },
+            {
+                "step": 5,
+                "agent": "mongodb_mcp_agent",
+                "action": "Expose stored live_evidence for ad-hoc Atlas inspection",
+                "evidence": mongodb_proof.get("document_key"),
+            },
+        ],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Lifespan (startup / shutdown)
 # ---------------------------------------------------------------------------
@@ -525,12 +706,18 @@ async def readiness_check() -> dict[str, Any]:
                 "status": "connected" if mongodb_connected else "demo_fallback",
                 "evidence": "Cloud Run deployment script plus resilient mock fallback",
             },
+            {
+                "name": "Live evidence proof",
+                "status": "implemented",
+                "evidence": "/api/live-proof fetches CoinGecko evidence and persists Atlas cache",
+            },
         ],
         "quality": {
-            "test_count": 60,
+            "test_count": 61,
             "core_agents": 5,
             "custom_tools": 28,
             "data_source": "mongodb" if mongodb_connected else "mock",
+            "live_sources": ["CoinGecko"],
         },
     }
 
@@ -573,6 +760,74 @@ async def judge_trace() -> dict[str, Any]:
         investigation=latest_investigation,
         audit_events=audit_events,
         collection_counts=collection_counts,
+    )
+
+
+@app.get("/api/live-proof", tags=["System"])
+async def live_proof(
+    slug: str = Query(default="ethereum", description="Crypto slug, symbol, or CoinGecko ID"),
+    force: bool = Query(default=False, description="Bypass MongoDB live evidence cache"),
+) -> dict[str, Any]:
+    """Return one-click proof of live source enrichment plus MongoDB persistence."""
+    normalized_slug = slug.strip().lower()
+    if not normalized_slug:
+        raise HTTPException(status_code=400, detail="'slug' must not be empty.")
+
+    db = _get_db_or_none()
+    project = _get_crypto_project_for_live_proof(normalized_slug, db)
+    if project is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Crypto project '{slug}' not found in the evidence catalog.",
+        )
+    normalized_slug = str(project.get("slug") or normalized_slug).lower()
+
+    cached = None if force else _load_live_evidence_cache(db, normalized_slug)
+    if cached:
+        live_evidence = cached.get("live_evidence", {})
+        return _build_live_proof_response(
+            slug=normalized_slug,
+            project=project,
+            live_evidence=live_evidence,
+            source="mongodb_cache",
+            cache_status="fresh_atlas_cache",
+            mongodb_proof={
+                "available": True,
+                "persisted": True,
+                "status": "cache_hit",
+                "collection": "live_evidence",
+                "document_key": f"coingecko:crypto:{normalized_slug}",
+                "fetched_at": cached.get("fetched_at"),
+            },
+            live_api_called=False,
+            cache_age=cache_age_seconds(cached),
+        )
+
+    market = fetch_coingecko_market_data(normalized_slug)
+    cache_status = "coingecko_live" if market.get("available") else "coingecko_unavailable"
+    live_evidence = build_live_crypto_evidence(
+        slug=normalized_slug,
+        project=project,
+        market=market,
+        cache_status=cache_status,
+    )
+
+    mongodb_proof = _persist_live_proof(db, normalized_slug, live_evidence)
+    source = (
+        "coingecko_live+mongodb"
+        if market.get("available") and mongodb_proof.get("persisted")
+        else "coingecko_live"
+        if market.get("available")
+        else "demo_fallback"
+    )
+    return _build_live_proof_response(
+        slug=normalized_slug,
+        project=project,
+        live_evidence=live_evidence,
+        source=source,
+        cache_status=cache_status,
+        mongodb_proof=mongodb_proof,
+        live_api_called=True,
     )
 
 

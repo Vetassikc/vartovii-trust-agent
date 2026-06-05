@@ -6,12 +6,12 @@
 </p>
 
 <p align="center">
-  <a href="https://adk.dev"><img src="https://img.shields.io/badge/Google_ADK-1.27.3-4285F4?logo=google&logoColor=white" alt="Google ADK"></a>
+  <a href="https://adk.dev"><img src="https://img.shields.io/badge/Google_ADK-2.0.0-4285F4?logo=google&logoColor=white" alt="Google ADK"></a>
   <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-5-flash"><img src="https://img.shields.io/badge/Vertex_AI-Gemini_3.5_Flash-8E75B2?logo=google&logoColor=white" alt="Vertex AI Gemini"></a>
   <a href="https://www.mongodb.com/atlas"><img src="https://img.shields.io/badge/MongoDB_Atlas-MCP_Server-47A248?logo=mongodb&logoColor=white" alt="MongoDB Atlas"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Protocol-FF6F00?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiPuKalDwvdGV4dD48L3N2Zz4=&logoColor=white" alt="MCP"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
-  <a href="#testing"><img src="https://img.shields.io/badge/Tests-60_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/Tests-61_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
 </p>
 
 ---
@@ -27,13 +27,13 @@
 
 **Vartovii reduces this to seconds.** A team of specialized AI agents collaborates to analyze companies and crypto projects across multiple dimensions, producing a unified Trust Score with full audit trail — all persisted in MongoDB Atlas.
 
-### Related Product Context
+### Standalone Hackathon Context
 
-This hackathon build is a new Google ADK + MongoDB MCP agent layer for the
-broader [Vartovii trust intelligence product](https://sentryanalytic.com/).
-The main product covers corporate and crypto trust research, score coverage,
-reports, watchlists, and forensic workflows; this submission focuses on the
-judge-verifiable agent route, MCP proof path, and MongoDB-backed audit memory.
+This repository is packaged as a standalone contest build created for the
+Google Cloud Rapid Agent Hackathon. The domain comes from trust intelligence
+research patterns, while the submitted agent graph, proof endpoints, UI, tests,
+deployment scripts, MongoDB Atlas integration, and MongoDB MCP path are focused
+on this judge-verifiable hackathon implementation.
 
 ---
 
@@ -99,12 +99,13 @@ graph TB
 |---------|-------------|
 | 🤖 **Multi-Agent Orchestration** | 5 specialized `LlmAgent`s coordinated via Google ADK — each with its own tools, context, and domain expertise |
 | 🍃 **MongoDB Atlas + MCP** | Structured PyMongo tools handle production workflows; the optional `mongodb-mcp-server` specialist handles ad-hoc collection inspection, aggregation, and explain-plan work |
+| 📡 **Live Evidence Proof** | `/api/live-proof` fetches CoinGecko market evidence, computes a trust-score delta, and persists the proof path in MongoDB Atlas cache |
 | 🔄 **Model Fallback** | Production uses Vertex AI Gemini 3.5 Flash GA with a 3.1 Flash-Lite cost profile and explicit 3.1 Pro preview opt-in |
 | 🧠 **Investigation Memory** | Cross-session persistence: agents save & recall past investigations via MongoDB |
 | 📋 **Full Audit Trail** | Every agent action logged for compliance — who did what, when, which model, latency |
 | 🔍 **OSINT Grounding** | Real-time web research via Google Search Grounding for entities not in database |
 | 📊 **28 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, similarity search, network risk, investigation management |
-| 🧪 **60 Automated Tests** | Architecture validation, MCP construction, tool contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
+| 🧪 **61 Automated Tests** | Architecture validation, MCP construction, live proof contract, dashboard fallback/readiness behavior, model routing, service layer coverage |
 
 ---
 
@@ -241,7 +242,7 @@ This gives the ADK graph **direct, flexible database access** through a dedicate
 
 | Layer | Technology |
 |-------|------------|
-| **AI Framework** | [Google Agent Development Kit (ADK)](https://adk.dev) 1.27.3 |
+| **AI Framework** | [Google Agent Development Kit (ADK)](https://adk.dev) 2.0.0 |
 | **Models** | Vertex AI Gemini 3.5 Flash GA; Gemini 3.1 Flash-Lite cost profile; Gemini 3.1 Pro preview opt-in |
 | **Database** | [MongoDB Atlas](https://www.mongodb.com/atlas) — cloud-hosted document database |
 | **MCP Server** | [`mongodb-mcp-server`](https://github.com/mongodb-js/mongodb-mcp-server) — official MongoDB MCP integration |
@@ -270,6 +271,7 @@ vartovii-trust-agent/
 │       ├── crypto_tools.py         # 6 crypto forensics tools
 │       ├── investigation_tools.py  # 4 investigation & audit tools
 │       ├── db.py                   # MongoDB connection manager (singleton)
+│       ├── live_data.py            # CoinGecko live evidence helpers
 │       └── mock_data.py            # Fallback demo data providers
 ├── services/                       # Service layer
 │   ├── model_runtime.py            # Model execution with fallback chain
@@ -281,7 +283,7 @@ vartovii-trust-agent/
 │   └── seed_mongodb.py             # Seed MongoDB Atlas with demo data
 ├── tests/
 │   ├── test_agent.py               # 35 agent architecture & tool tests
-│   ├── test_dashboard_api.py       # 6 dashboard fallback/readiness contract tests
+│   ├── test_dashboard_api.py       # 10 dashboard fallback/readiness/live-proof contract tests
 │   └── test_services.py            # 13 service layer tests
 ├── demo/
 │   └── run_demo.py                 # Interactive demo runner (5 scenarios)
@@ -322,9 +324,9 @@ pytest tests/ -v --tb=short
 | Test Suite | Tests | Coverage |
 |-----------|-------|----------|
 | `test_agent.py` | 38 | Agent topology, tool registration, MCP integration, fallback chains, audit model policy |
-| `test_dashboard_api.py` | 9 | Dashboard mock fallback, readiness endpoint, judge trace, health model metadata, leaderboard and entity detail contracts |
+| `test_dashboard_api.py` | 10 | Dashboard mock fallback, readiness endpoint, live proof, judge trace, health model metadata, leaderboard and entity detail contracts |
 | `test_services.py` | 13 | Model runtime, routing adapter, telemetry, config validation |
-| **Total** | **60** | Architecture, tools, dashboard API, MongoDB fallback/readiness, services |
+| **Total** | **61** | Architecture, tools, dashboard API, MongoDB fallback/readiness/live proof, services |
 
 Key test categories:
 - ✅ **Agent architecture** — verifies 5-agent topology, correct tool assignment
@@ -353,6 +355,15 @@ Key test categories:
 → search_crypto_projects("Uniswap") → get_crypto_trust_score("uniswap")
 → Trust Score: 78/100 | Security: HIGH | TVL, dev activity, audit status
 → Memory Agent saves investigation to MongoDB
+```
+
+### 📡 Live Evidence Proof
+```
+GET /api/live-proof?slug=ethereum
+→ Crypto proof path fetches CoinGecko market evidence
+→ Trust delta is computed from 24h movement
+→ MongoDB Atlas caches the live evidence for audit and MCP inspection
+→ Response exposes source URL, freshness, persistence status, and agent trace
 ```
 
 ### 🔗 Blockchain Forensics

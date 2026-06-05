@@ -1,6 +1,6 @@
 # Vartovii Trust Agent Submission Prep
 
-Last verified against Devpost on 2026-06-04.
+Last verified against Devpost on 2026-06-05.
 
 ## Official Hackathon Links
 
@@ -14,8 +14,7 @@ Last verified against Devpost on 2026-06-04.
 - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
 - Public repository: https://github.com/Vetassikc/vartovii-trust-agent
 - License: MIT, visible in `LICENSE`
-- Main product context: https://sentryanalytic.com/
-- Product docs: https://sentryanalytic.com/docs
+- Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
 - Judge trace proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
 - Readiness proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness
 
@@ -32,7 +31,8 @@ Last verified against Devpost on 2026-06-04.
 - [ ] Submission supports English language use.
 - [ ] MongoDB track is selected.
 - [ ] The description explicitly mentions Gemini, Google ADK, Google Cloud deployment, MongoDB Atlas, and MongoDB MCP.
-- [ ] The description does not over-frame this as the existing main product; it is a new hackathon agent layer for the broader Vartovii trust product.
+- [ ] The description presents this as a standalone contest build created for the hackathon.
+- [ ] The description includes `/api/live-proof` as live source evidence, not only static seed data.
 
 ## Judge Narrative
 
@@ -43,7 +43,8 @@ Use this hierarchy in every description and answer:
 3. The agent plans a route, uses specialized tools, inspects evidence, stores memory, and returns a judge-verifiable decision.
 4. MongoDB Atlas is the evidence and audit memory layer.
 5. MongoDB MCP is the flexible ad-hoc database inspection path that lets the agent answer database questions beyond hard-coded tools.
-6. The broader Vartovii product gives the submission a real-world path: corporate trust, crypto risk, reports, watchlists, and forensic workflows.
+6. `/api/live-proof` shows CoinGecko live evidence, trust delta calculation, and MongoDB Atlas cache persistence.
+7. The project is standalone, while the domain is trust intelligence for corporate and crypto diligence.
 
 ## Judging Criteria Mapping
 
@@ -53,6 +54,7 @@ Use this hierarchy in every description and answer:
 - Vertex AI Gemini model routing with fallback policy.
 - MongoDB Atlas collections for companies, crypto projects, investigations, and audit events.
 - MongoDB MCP specialist for ad-hoc Atlas operations.
+- CoinGecko live evidence proof with MongoDB Atlas cache.
 - Cloud Run hosted demo plus Agent Engine deployment path.
 - Automated tests covering agent topology, MCP setup, API readiness, model policy, and fallback behavior.
 
@@ -60,8 +62,9 @@ Use this hierarchy in every description and answer:
 
 - Evidence-first UI rather than a generic chat screen.
 - Live readiness, data source, model, and MCP status are visible to judges.
+- Live proof block shows source freshness, trust delta, and persistence status.
 - Judge trace section exposes the route, trust score, evidence, MCP proof, and final decision.
-- Product context links explain how the hackathon agent connects to the broader Vartovii product.
+- Standalone project context avoids over-framing this as an extension of previous work.
 
 ### Potential Impact
 
@@ -81,10 +84,10 @@ Use this hierarchy in every description and answer:
 2. Ask for a judge-ready Wirecard investigation.
 3. Scroll to the judge trace and show route, score, evidence, MCP proof, and decision.
 4. Ask how MongoDB Atlas and MCP improve the workflow.
-5. Show `/api/judge-trace` in a browser tab to prove the UI is backed by a real endpoint.
-6. Show `/api/readiness` to prove tests, model, database, Agent Engine, and MCP status.
-7. Briefly show the repository README, license, architecture diagram, and tests.
-8. End with the main product context: this agent is a new evidence-first agent layer for the broader Vartovii trust product.
+5. Show the Live Proof section, then open `/api/live-proof?slug=ethereum`.
+6. Show `/api/judge-trace` in a browser tab to prove the UI is backed by a real endpoint.
+7. Show `/api/readiness` to prove tests, model, database, Agent Engine, and MCP status.
+8. Briefly show the repository README, license, architecture diagram, and tests.
 
 ## Final Sanity Checks Before Submission
 
@@ -102,4 +105,5 @@ Then smoke the live endpoints:
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/health
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
+curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
 ```

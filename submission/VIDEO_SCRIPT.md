@@ -9,6 +9,7 @@ Target length: 2:45-3:00.
 - Keep browser zoom at 100%.
 - Use a clean browser window with three tabs ready:
   - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
+  - Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
   - Judge trace: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
   - Repository: https://github.com/Vetassikc/vartovii-trust-agent
 
@@ -58,7 +59,15 @@ Voiceover:
 
 > MongoDB Atlas stores the entities, investigations, and audit events. The structured tools handle production scoring paths. The MongoDB MCP specialist gives the agent flexible ad-hoc access for questions that were not hard-coded in advance. That is the partner superpower: the agent can inspect the database as part of the investigation workflow.
 
-### 1:50-2:20 — Live Proof Endpoints
+### 1:50-2:20 — Live Source Proof
+
+Scroll to the Live Proof section, then switch to `/api/live-proof?slug=ethereum`.
+
+Voiceover:
+
+> The project also proves that it is not limited to static seed data. This live proof path fetches current CoinGecko market evidence, computes a trust-score delta, and stores the proof in MongoDB Atlas for audit and MCP inspection. The UI shows the source, freshness, adjusted score, and persistence status.
+
+### 2:20-2:40 — Judge Trace And Readiness
 
 Switch to `/api/judge-trace`, then `/api/readiness`.
 
@@ -66,7 +75,7 @@ Voiceover:
 
 > The submission also exposes live proof endpoints. The judge trace endpoint shows the route, decision, evidence, audit events, and MCP proof. The readiness endpoint shows the active model, MongoDB status, test count, Agent Engine deployment path, and MCP configuration.
 
-### 2:20-2:45 — Repository And Production Quality
+### 2:40-2:55 — Repository And Production Quality
 
 Switch to GitHub README. Briefly show README, architecture, license, and tests.
 
@@ -74,13 +83,13 @@ Voiceover:
 
 > The repository is public, licensed, and includes architecture docs, model policy, source freshness policy, agent role mapping, deployment scripts, and automated tests. The goal was to make the project read like a production trust system, not a disposable demo.
 
-### 2:45-3:00 — Main Product Context
+### 2:55-3:00 — Close
 
-Return to the UI product context section or footer.
+Return to the UI standalone context section or footer.
 
 Voiceover:
 
-> This hackathon build is a new evidence-first agent layer for the broader Vartovii trust product. The main product covers corporate and crypto trust research, reports, watchlists, and forensic workflows. This submission proves the agent route, MongoDB memory, MCP inspection, and judge-ready decision layer.
+> The result is a standalone contest build for evidence-first trust investigation: live source proof, MongoDB memory, MCP inspection, and a judge-ready decision layer.
 
 ## Backup One-Take Script
 
@@ -90,6 +99,6 @@ Voiceover:
 >
 > In the demo, I run a judge-ready Wirecard investigation. The system shows the route, the trust score, the evidence, and the final decision. It also exposes a live judge-trace endpoint so the workflow can be inspected outside the chat UI.
 >
-> I then ask how MongoDB Atlas and MCP improve the workflow. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for unexpected investigation questions.
+> I then show the live proof endpoint for Ethereum. It fetches current CoinGecko market evidence, computes a trust-score delta, and stores that proof in MongoDB Atlas. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for unexpected investigation questions.
 >
-> Finally, the readiness endpoint proves that the system is deployed, tested, and configured with Gemini, Google ADK, MongoDB Atlas, MCP, and the Agent Engine deployment path. Vartovii is connected to a broader trust intelligence product for corporate and crypto research, but this hackathon submission is a new agent layer focused on verifiable investigation.
+> Finally, the readiness endpoint proves that the system is deployed, tested, and configured with Gemini, Google ADK, MongoDB Atlas, MCP, and the Agent Engine deployment path. This is a standalone hackathon build focused on verifiable investigation.
