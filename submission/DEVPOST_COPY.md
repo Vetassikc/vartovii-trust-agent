@@ -78,6 +78,7 @@ The hardest part was making the agent demo judge-verifiable. A normal chatbot re
 - Deployed the project on Google Cloud Run.
 - Added live readiness, judge-trace, and live-proof endpoints.
 - Added CoinGecko live evidence enrichment with MongoDB Atlas cache persistence.
+- Added Etherscan wallet balance proof with MongoDB Atlas cache persistence.
 - Added model routing and fallback policy.
 - Added automated tests for the core agent, API, services, and MCP paths.
 - Improved the UI so the demo communicates trust investigation rather than generic chat.
@@ -101,5 +102,6 @@ Next, Vartovii can expand from the hackathon proof path into a production trust 
 - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
 - Repository: https://github.com/Vetassikc/vartovii-trust-agent
 - Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
+- Wallet proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
 - Judge trace proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
 - Readiness proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness

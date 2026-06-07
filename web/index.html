@@ -100,7 +100,7 @@
                             <span><strong>Vertex</strong> Agent Engine</span>
                             <span><strong>5</strong> core agents</span>
                             <span><strong>28</strong> custom tools</span>
-                            <span><strong>61</strong> tests</span>
+                            <span><strong>63</strong> tests</span>
                             <span><strong>MCP</strong> MongoDB Atlas</span>
                         </div>
                         <div class="judge-scorecard" aria-label="Judging criteria alignment">
@@ -268,7 +268,10 @@
 
                 <!-- Risk distribution bar -->
                 <div class="riskmeter-container">
-                    <div class="riskmeter-label">Risk Distribution</div>
+                    <div class="riskmeter-label-row">
+                        <div class="riskmeter-label">Risk Distribution</div>
+                        <div class="riskmeter-summary" id="riskmeter-summary">coverage pending</div>
+                    </div>
                     <div class="riskmeter" id="riskmeter">
                         <div class="riskmeter__segment riskmeter__segment--critical" id="risk-critical" style="width:0%">
                             <span class="riskmeter__tooltip">CRITICAL: 0</span>
@@ -340,10 +343,10 @@
                 </div>
                 <div class="section-heading-row">
                     <div>
-                        <h2>CoinGecko signal, MongoDB memory, inspectable trace</h2>
-                        <p>One endpoint proves the agent can enrich a trust score with current market evidence, cache it in Atlas, and expose the reasoning path.</p>
+                        <h2>Live evidence proof, not a static demo</h2>
+                        <p>Two live proof paths show current market evidence, real wallet balance evidence, Atlas cache persistence, and the visible agent route behind the decision.</p>
                     </div>
-                    <span class="section-meta">/api/live-proof?slug=ethereum</span>
+                    <span class="section-meta">/api/live-proof + /api/wallet-live-proof</span>
                 </div>
                 <div class="live-proof-panel glass-panel">
                     <div class="live-proof-score" id="live-proof-gauge">
@@ -372,6 +375,12 @@
                                 <strong id="live-proof-freshness">—</strong>
                             </div>
                         </div>
+                        <div class="live-proof-signal" id="live-proof-signal" aria-label="24 hour live market signal">
+                            <div class="live-proof-signal__pending">Market signal pending</div>
+                        </div>
+                        <div class="live-proof-ledger" id="live-proof-ledger" aria-label="Live proof source ledger">
+                            <span>Source ledger pending</span>
+                        </div>
                         <div class="live-proof-persistence" id="live-proof-persistence">
                             MongoDB persistence pending
                         </div>
@@ -382,6 +391,72 @@
                     <div class="live-proof-trace" id="live-proof-trace">
                         <div class="loader-dots"><span></span><span></span><span></span></div>
                     </div>
+                    <div class="live-proof-pipeline" id="live-proof-pipeline" aria-label="Live evidence pipeline">
+                        <div class="loader-dots"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+                <div class="proof-ops-grid" aria-label="Live operational proof">
+                    <article class="proof-ops-card wallet-proof-card">
+                        <div class="proof-ops-card__header">
+                            <div>
+                                <span class="mcp-proof__tag">Etherscan wallet proof</span>
+                                <h3 id="wallet-proof-label">Ethereum wallet</h3>
+                            </div>
+                            <span class="source-pill" id="wallet-proof-status">Checking</span>
+                        </div>
+                        <div class="wallet-proof-balance">
+                            <span>Native ETH balance</span>
+                            <strong id="wallet-proof-balance">—</strong>
+                        </div>
+                        <div class="wallet-proof-grid">
+                            <div>
+                                <span>Address</span>
+                                <strong id="wallet-proof-address">—</strong>
+                            </div>
+                            <div>
+                                <span>Freshness</span>
+                                <strong id="wallet-proof-freshness">—</strong>
+                            </div>
+                            <div>
+                                <span>Provider</span>
+                                <strong id="wallet-proof-provider">—</strong>
+                            </div>
+                            <div>
+                                <span>Persistence</span>
+                                <strong id="wallet-proof-persistence">—</strong>
+                            </div>
+                        </div>
+                        <div class="wallet-proof-factors" id="wallet-proof-factors">
+                            <div class="loader-dots"><span></span><span></span><span></span></div>
+                        </div>
+                    </article>
+
+                    <article class="proof-ops-card agent-activity-card">
+                        <div class="proof-ops-card__header">
+                            <div>
+                                <span class="mcp-proof__tag">Agent activity stream</span>
+                                <h3>Real-time routing</h3>
+                            </div>
+                            <span class="section-meta" id="activity-stream-meta">Polling audit</span>
+                        </div>
+                        <div class="agent-activity-stream" id="agent-activity-stream">
+                            <div class="loader-dots"><span></span><span></span><span></span></div>
+                        </div>
+                    </article>
+
+                    <article class="proof-ops-card trust-radar-card">
+                        <div class="proof-ops-card__header">
+                            <div>
+                                <span class="mcp-proof__tag">Trust dimensions</span>
+                                <h3>5-axis radar</h3>
+                            </div>
+                            <span class="section-meta" id="trust-radar-meta">Live weighted</span>
+                        </div>
+                        <div class="trust-radar-chart" id="trust-radar-chart">
+                            <div class="loader-dots"><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="trust-radar-legend" id="trust-radar-legend"></div>
+                    </article>
                 </div>
             </div>
         </section>
@@ -832,6 +907,10 @@
                         <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum" target="_blank" rel="noopener noreferrer">
                             <span>Live proof API</span>
                             <strong>CoinGecko, Atlas cache, trust delta</strong>
+                        </a>
+                        <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof" target="_blank" rel="noopener noreferrer">
+                            <span>Wallet proof API</span>
+                            <strong>Etherscan balance, Atlas cache, agent trace</strong>
                         </a>
                         <a href="https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace" target="_blank" rel="noopener noreferrer">
                             <span>Judge trace API</span>

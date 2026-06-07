@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Any, Optional
 from urllib.error import HTTPError, URLError
@@ -21,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3"
 COINGECKO_CACHE_TTL_SECONDS = 3600
+ETHERSCAN_BASE_URL = "https://api.etherscan.io/v2/api"
+ETHERSCAN_CACHE_TTL_SECONDS = 900
+ETHERSCAN_CHAIN_ID = "1"
+WEI_PER_ETH = 10**18
+ETH_ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 
 COINGECKO_ID_ALIASES = {
     "btc": "bitcoin",
@@ -41,6 +47,16 @@ def normalize_coingecko_id(slug: str) -> str:
     """Normalize local slugs or symbols into CoinGecko IDs."""
     key = str(slug or "").strip().lower()
     return COINGECKO_ID_ALIASES.get(key, key.replace(" ", "-"))
+
+
+def normalize_eth_address(address: str) -> str:
+    """Normalize an Ethereum address for cache keys."""
+    return str(address or "").strip().lower()
+
+
+def is_valid_eth_address(address: str) -> bool:
+    """Return whether the value has the shape of an Ethereum address."""
+    return bool(ETH_ADDRESS_RE.fullmatch(str(address or "").strip()))
 
 
 def _safe_float(value: Any) -> Optional[float]:
@@ -160,6 +176,115 @@ def fetch_coingecko_market_data(slug: str, timeout_seconds: float = 8.0) -> dict
         "volume_24h_usd": _safe_float(asset.get("usd_24h_vol")),
         "price_change_24h_pct": _safe_float(asset.get("usd_24h_change")),
         "coingecko_last_updated_at": last_updated_iso,
+    }
+
+
+def _format_eth_from_wei(balance_wei: int) -> str:
+    """Format wei as an ETH decimal string without losing trailing precision."""
+    whole = balance_wei // WEI_PER_ETH
+    fractional = balance_wei % WEI_PER_ETH
+    if fractional == 0:
+        return str(whole)
+    return f"{whole}.{fractional:018d}".rstrip("0")
+
+
+def fetch_etherscan_wallet_balance(
+    address: str,
+    api_key: str,
+    timeout_seconds: float = 8.0,
+) -> dict[str, Any]:
+    """Fetch a live Ethereum wallet balance from Etherscan API V2."""
+    cleaned_address = str(address or "").strip()
+    requested_at = utc_now_iso()
+    safe_params = {
+        "chainid": ETHERSCAN_CHAIN_ID,
+        "module": "account",
+        "action": "balance",
+        "address": cleaned_address,
+        "tag": "latest",
+    }
+    source_url = f"{ETHERSCAN_BASE_URL}?{urlencode(safe_params)}"
+
+    if not is_valid_eth_address(cleaned_address):
+        return {
+            "available": False,
+            "provider": "etherscan",
+            "chain_id": ETHERSCAN_CHAIN_ID,
+            "address": cleaned_address,
+            "fetched_at": requested_at,
+            "source_url": source_url,
+            "error": "invalid_address",
+        }
+
+    if not api_key:
+        return {
+            "available": False,
+            "provider": "etherscan",
+            "chain_id": ETHERSCAN_CHAIN_ID,
+            "address": cleaned_address,
+            "fetched_at": requested_at,
+            "source_url": source_url,
+            "error": "missing_api_key",
+        }
+
+    request_params = {**safe_params, "apikey": api_key}
+    request = Request(
+        f"{ETHERSCAN_BASE_URL}?{urlencode(request_params)}",
+        headers={
+            "User-Agent": "vartovii-trust-agent/2.0 hackathon-wallet-proof",
+            "Accept": "application/json",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310 - fixed public HTTPS endpoint
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        logger.warning("Etherscan wallet balance fetch failed for %s: %s", cleaned_address, exc)
+        return {
+            "available": False,
+            "provider": "etherscan",
+            "chain_id": ETHERSCAN_CHAIN_ID,
+            "address": cleaned_address,
+            "fetched_at": requested_at,
+            "source_url": source_url,
+            "error": exc.__class__.__name__,
+        }
+
+    if str(payload.get("status")) != "1":
+        return {
+            "available": False,
+            "provider": "etherscan",
+            "chain_id": ETHERSCAN_CHAIN_ID,
+            "address": cleaned_address,
+            "fetched_at": requested_at,
+            "source_url": source_url,
+            "error": str(payload.get("message") or "etherscan_not_ok"),
+        }
+
+    try:
+        balance_wei = int(str(payload.get("result", "0")))
+    except (TypeError, ValueError):
+        return {
+            "available": False,
+            "provider": "etherscan",
+            "chain_id": ETHERSCAN_CHAIN_ID,
+            "address": cleaned_address,
+            "fetched_at": requested_at,
+            "source_url": source_url,
+            "error": "invalid_balance_result",
+        }
+
+    return {
+        "available": True,
+        "provider": "etherscan",
+        "chain_id": ETHERSCAN_CHAIN_ID,
+        "address": cleaned_address,
+        "fetched_at": requested_at,
+        "source_url": source_url,
+        "balance_wei": str(balance_wei),
+        "eth_balance": balance_wei / WEI_PER_ETH,
+        "eth_balance_display": _format_eth_from_wei(balance_wei),
     }
 
 

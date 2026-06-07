@@ -18,7 +18,7 @@ Structured PyMongo tools are best for production scoring workflows. MongoDB MCP 
 
 ## What live data does it use?
 
-The live proof path calls CoinGecko for current crypto market evidence. It computes a trust-score delta from 24-hour movement, stores that evidence in MongoDB Atlas, and exposes source freshness and persistence status through `/api/live-proof`.
+The live proof paths call CoinGecko for current crypto market evidence and Etherscan for native ETH wallet balance evidence. The system stores both proof records in MongoDB Atlas and exposes source freshness and persistence status through `/api/live-proof` and `/api/wallet-live-proof`.
 
 ## Is this connected to prior work?
 
@@ -35,9 +35,10 @@ It is a hackathon implementation, but it is structured like a production system.
 3. Inspect the judge trace in the UI.
 4. Inspect the live proof block in the UI.
 5. Open `/api/live-proof?slug=ethereum`.
-6. Open `/api/judge-trace`.
-7. Open `/api/readiness`.
-8. Check the repository README, license, architecture, and tests.
+6. Open `/api/wallet-live-proof`.
+7. Open `/api/judge-trace`.
+8. Open `/api/readiness`.
+9. Check the repository README, license, architecture, and tests.
 
 ## What is the strongest differentiator?
 

@@ -85,15 +85,16 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
     assert result["submission"]["demo_video"] == "pending"
     assert result["agent_engine"]["status"] in {"deployed", "deployable"}
     assert "reasoningEngines" in result["agent_engine"]["resource"]
-    assert result["quality"]["test_count"] == 61
+    assert result["quality"]["test_count"] == 63
     assert {item["name"] for item in result["requirements"]} == {
         "Gemini-powered AI agent",
         "Google Cloud Agent Builder path",
         "Partner MCP server",
         "Hosted production service",
         "Live evidence proof",
+        "Live wallet proof",
     }
-    assert result["quality"]["live_sources"] == ["CoinGecko"]
+    assert result["quality"]["live_sources"] == ["CoinGecko", "Etherscan"]
 
 
 @pytest.mark.asyncio
@@ -137,3 +138,60 @@ async def test_live_proof_fetches_coingecko_evidence_without_secrets(monkeypatch
     assert result["live_evidence"]["live_adjusted_trust_score"] == 90
     assert result["mongodb_proof"]["status"] == "skipped_no_mongodb"
     assert [step["step"] for step in result["agent_trace"]] == [1, 2, 3, 4, 5]
+
+
+@pytest.mark.asyncio
+async def test_wallet_live_proof_fetches_etherscan_balance_without_secrets(monkeypatch):
+    def fake_fetch(address, api_key):
+        assert address == "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+        assert api_key == "test-etherscan-key"
+        return {
+            "available": True,
+            "provider": "etherscan",
+            "chain_id": "1",
+            "address": address,
+            "fetched_at": "2026-06-05T10:00:00+00:00",
+            "source_url": (
+                "https://api.etherscan.io/v2/api?"
+                "chainid=1&module=account&action=balance&address="
+                "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&tag=latest"
+            ),
+            "balance_wei": "1234500000000000000",
+            "eth_balance": 1.2345,
+            "eth_balance_display": "1.2345",
+        }
+
+    monkeypatch.setattr(dashboard_api, "ETHERSCAN_API_KEY", "test-etherscan-key")
+    monkeypatch.setattr(dashboard_api, "fetch_etherscan_wallet_balance", fake_fetch)
+
+    result = await dashboard_api.wallet_live_proof(
+        address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+        force=True,
+    )
+
+    assert result["status"] == "ready"
+    assert result["live_api_called"] is True
+    assert result["target"]["entity_type"] == "wallet"
+    assert result["source_freshness"]["provider"] == "Etherscan"
+    assert result["wallet_evidence"]["eth_balance"] == 1.2345
+    assert result["mongodb_proof"]["status"] == "skipped_no_mongodb"
+    assert [step["step"] for step in result["agent_trace"]] == [1, 2, 3, 4, 5]
+    assert "test-etherscan-key" not in str(result)
+
+
+@pytest.mark.asyncio
+async def test_wallet_live_proof_degrades_without_etherscan_key(monkeypatch):
+    monkeypatch.setattr(dashboard_api, "ETHERSCAN_API_KEY", "")
+
+    result = await dashboard_api.wallet_live_proof(
+        address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+        force=True,
+    )
+
+    assert result["status"] == "degraded"
+    assert result["source"] == "wallet_fallback"
+    assert result["live_api_called"] is False
+    assert result["wallet_evidence"]["balance"]["error"] == "missing_api_key"
+    assert result["wallet_evidence"]["eth_balance"] == 1247.83
+    assert result["mongodb_proof"]["status"] == "not_persisted_no_live_balance"
+    assert result["agent_trace"][1]["evidence"] == "missing_api_key"

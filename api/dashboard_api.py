@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -29,10 +30,14 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from agent.config import AIConfig
 from agent.tools.live_data import (
     COINGECKO_CACHE_TTL_SECONDS,
+    ETHERSCAN_CACHE_TTL_SECONDS,
     build_live_crypto_evidence,
     cache_age_seconds,
     fetch_coingecko_market_data,
+    fetch_etherscan_wallet_balance,
+    is_valid_eth_address,
     is_cache_fresh,
+    normalize_eth_address,
 )
 from agent.tools.mock_data import (
     COMPANIES as MOCK_COMPANIES,
@@ -71,6 +76,16 @@ AGENT_ENGINE_CONSOLE_URL: str = os.getenv(
         "locations/europe-west1/agent-engines/1778103816160280576/playground"
         "?project=1047739822568"
     ),
+)
+_ETHERSCAN_API_KEY_ENV: str = os.getenv("ETHERSCAN_API_KEY", "")
+ETHERSCAN_API_KEY: str = (
+    ""
+    if _ETHERSCAN_API_KEY_ENV.startswith("your_")
+    else _ETHERSCAN_API_KEY_ENV
+)
+LIVE_WALLET_ADDRESS: str = os.getenv(
+    "LIVE_WALLET_ADDRESS",
+    "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
 )
 
 # ---------------------------------------------------------------------------
@@ -522,6 +537,242 @@ def _persist_live_proof(
     return proof
 
 
+def _get_wallet_for_live_proof(address: str, db: Optional[Database]) -> Optional[dict[str, Any]]:
+    """Return a wallet profile from MongoDB or demo data for wallet live proof."""
+    normalized = normalize_eth_address(address)
+    if db is not None:
+        doc = db["wallets"].find_one(
+            {"address": {"$regex": f"^{re.escape(normalized)}$", "$options": "i"}},
+            {"_id": 0},
+        )
+        if doc:
+            return doc
+
+    wallet = MOCK_WALLETS.get(normalized)
+    return dict(wallet) if wallet else None
+
+
+def _load_wallet_live_cache(
+    db: Optional[Database],
+    address: str,
+) -> Optional[dict[str, Any]]:
+    """Read a fresh Etherscan wallet balance cache record from MongoDB."""
+    if db is None:
+        return None
+    cached = db["live_evidence"].find_one(
+        {
+            "provider": "etherscan",
+            "entity_type": "wallet",
+            "address": normalize_eth_address(address),
+        },
+        {"_id": 0},
+    )
+    if cached and is_cache_fresh(cached, ETHERSCAN_CACHE_TTL_SECONDS):
+        return cached
+    return None
+
+
+def _wallet_balance_label(balance: dict[str, Any], wallet: Optional[dict[str, Any]]) -> str:
+    """Return a display-ready ETH balance for public proof cards."""
+    if balance.get("available"):
+        return f"{balance.get('eth_balance_display', balance.get('eth_balance'))} ETH"
+    fallback_balance = (wallet or {}).get("eth_balance")
+    if isinstance(fallback_balance, (int, float)):
+        return f"{fallback_balance:,.4f} ETH fallback"
+    return "not available"
+
+
+def _build_wallet_live_evidence(
+    *,
+    address: str,
+    wallet: Optional[dict[str, Any]],
+    balance: dict[str, Any],
+    cache_status: str,
+) -> dict[str, Any]:
+    """Build a judge-facing live wallet evidence object."""
+    eth_balance = balance.get("eth_balance") if balance.get("available") else (wallet or {}).get("eth_balance")
+    usd_value = (wallet or {}).get("usd_value")
+    source_label = "Etherscan API V2" if balance.get("available") else "wallet fallback"
+    fetched_at = balance.get("fetched_at") or datetime.now(timezone.utc).isoformat()
+
+    factors = [
+        {
+            "label": "Wallet label",
+            "value": (wallet or {}).get("label") or "unlabelled address",
+            "impact": "MongoDB wallet profile or demo fallback",
+        },
+        {
+            "label": "Native ETH balance",
+            "value": _wallet_balance_label(balance, wallet),
+            "impact": source_label,
+        },
+        {
+            "label": "Chain",
+            "value": "Ethereum mainnet",
+            "impact": "Etherscan V2 chainid=1",
+        },
+        {
+            "label": "Evidence freshness",
+            "value": cache_status,
+            "impact": fetched_at,
+        },
+    ]
+
+    return {
+        "entity_type": "wallet",
+        "address": address,
+        "normalized_address": normalize_eth_address(address),
+        "chain": "ethereum",
+        "chain_id": "1",
+        "label": (wallet or {}).get("label"),
+        "eth_balance": eth_balance,
+        "eth_balance_display": (
+            balance.get("eth_balance_display")
+            if balance.get("available")
+            else _wallet_balance_label(balance, wallet).replace(" ETH fallback", "")
+        ),
+        "usd_value": usd_value,
+        "balance": balance,
+        "factors": factors,
+        "fetched_at": fetched_at,
+        "cache_status": cache_status,
+    }
+
+
+def _wallet_persistence_proof(db: Optional[Database], address: str) -> dict[str, Any]:
+    """Return the public persistence proof shell for wallet live evidence."""
+    return {
+        "available": db is not None,
+        "persisted": False,
+        "collection": "live_evidence",
+        "document_key": f"etherscan:wallet:{normalize_eth_address(address)}",
+    }
+
+
+def _persist_wallet_live_proof(
+    db: Optional[Database],
+    address: str,
+    live_evidence: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist live wallet evidence and return a public persistence proof."""
+    proof = _wallet_persistence_proof(db, address)
+    if db is None:
+        proof["status"] = "skipped_no_mongodb"
+        return proof
+
+    normalized = normalize_eth_address(address)
+    db["live_evidence"].update_one(
+        {"provider": "etherscan", "entity_type": "wallet", "address": normalized},
+        {
+            "$set": {
+                "provider": "etherscan",
+                "entity_type": "wallet",
+                "address": normalized,
+                "fetched_at": live_evidence.get("fetched_at"),
+                "cache_ttl_seconds": ETHERSCAN_CACHE_TTL_SECONDS,
+                "live_evidence": live_evidence,
+            }
+        },
+        upsert=True,
+    )
+
+    db["wallets"].update_one(
+        {"address": {"$regex": f"^{re.escape(normalized)}$", "$options": "i"}},
+        {
+            "$set": {
+                "live_enriched_at": live_evidence.get("fetched_at"),
+                "eth_balance": live_evidence.get("eth_balance"),
+                "live_balance": live_evidence.get("balance", {}),
+            }
+        },
+        upsert=False,
+    )
+
+    persisted = db["live_evidence"].find_one(
+        {"provider": "etherscan", "entity_type": "wallet", "address": normalized},
+        {"_id": 0, "fetched_at": 1, "live_evidence.eth_balance": 1},
+    )
+    proof["persisted"] = persisted is not None
+    proof["status"] = "persisted" if persisted else "write_not_confirmed"
+    proof["fetched_at"] = persisted.get("fetched_at") if persisted else None
+    return proof
+
+
+def _build_wallet_live_proof_response(
+    *,
+    address: str,
+    wallet: Optional[dict[str, Any]],
+    live_evidence: dict[str, Any],
+    source: str,
+    cache_status: str,
+    mongodb_proof: dict[str, Any],
+    live_api_called: bool,
+    cache_age: Optional[int] = None,
+) -> dict[str, Any]:
+    """Build the public wallet live-proof API response."""
+    balance = live_evidence.get("balance", {})
+    source_evidence = (
+        "Etherscan live API called"
+        if live_api_called
+        else "Fresh MongoDB live_evidence cache reused"
+        if source == "mongodb_cache"
+        else balance.get("error") or "Etherscan live balance unavailable"
+    )
+    return {
+        "status": "ready" if balance.get("available") else "degraded",
+        "source": source,
+        "live_api_called": live_api_called,
+        "target": {
+            "entity_type": "wallet",
+            "address": address,
+            "label": live_evidence.get("label") or (wallet or {}).get("label"),
+            "chain": "ethereum",
+        },
+        "source_freshness": {
+            "provider": "Etherscan",
+            "cache_status": cache_status,
+            "fetched_at": live_evidence.get("fetched_at"),
+            "cache_age_seconds": cache_age,
+            "cache_ttl_seconds": ETHERSCAN_CACHE_TTL_SECONDS,
+            "source_url": balance.get("source_url"),
+        },
+        "wallet_evidence": live_evidence,
+        "mongodb_proof": mongodb_proof,
+        "agent_trace": [
+            {
+                "step": 1,
+                "agent": "vartovii_orchestrator",
+                "action": "Route wallet balance proof request to crypto specialist",
+                "evidence": "Wallet proofs share the crypto due-diligence route.",
+            },
+            {
+                "step": 2,
+                "agent": "crypto_agent",
+                "action": "Fetch Etherscan native ETH balance or reuse fresh Atlas cache",
+                "evidence": source_evidence,
+            },
+            {
+                "step": 3,
+                "agent": "crypto_agent",
+                "action": "Normalize wallet balance into judge-readable evidence",
+                "evidence": _wallet_balance_label(balance, wallet),
+            },
+            {
+                "step": 4,
+                "agent": "memory_agent",
+                "action": "Persist wallet evidence for audit and replay",
+                "evidence": mongodb_proof.get("status", "not persisted"),
+            },
+            {
+                "step": 5,
+                "agent": "mongodb_mcp_agent",
+                "action": "Expose wallet live_evidence for ad-hoc Atlas inspection",
+                "evidence": mongodb_proof.get("document_key"),
+            },
+        ],
+    }
+
+
 def _build_live_proof_response(
     *,
     slug: str,
@@ -711,13 +962,18 @@ async def readiness_check() -> dict[str, Any]:
                 "status": "implemented",
                 "evidence": "/api/live-proof fetches CoinGecko evidence and persists Atlas cache",
             },
+            {
+                "name": "Live wallet proof",
+                "status": "implemented",
+                "evidence": "/api/wallet-live-proof fetches Etherscan ETH balance evidence and persists Atlas cache",
+            },
         ],
         "quality": {
-            "test_count": 61,
+            "test_count": 63,
             "core_agents": 5,
             "custom_tools": 28,
             "data_source": "mongodb" if mongodb_connected else "mock",
-            "live_sources": ["CoinGecko"],
+            "live_sources": ["CoinGecko", "Etherscan"],
         },
     }
 
@@ -828,6 +1084,76 @@ async def live_proof(
         cache_status=cache_status,
         mongodb_proof=mongodb_proof,
         live_api_called=True,
+    )
+
+
+@app.get("/api/wallet-live-proof", tags=["System"])
+async def wallet_live_proof(
+    address: str = Query(default=LIVE_WALLET_ADDRESS, description="Ethereum wallet address"),
+    force: bool = Query(default=False, description="Bypass MongoDB wallet balance cache"),
+) -> dict[str, Any]:
+    """Return one-click proof of live Etherscan wallet balance enrichment."""
+    cleaned_address = address.strip()
+    if not is_valid_eth_address(cleaned_address):
+        raise HTTPException(status_code=400, detail="'address' must be a valid Ethereum address.")
+
+    normalized_address = normalize_eth_address(cleaned_address)
+    db = _get_db_or_none()
+    wallet = _get_wallet_for_live_proof(cleaned_address, db)
+
+    cached = None if force else _load_wallet_live_cache(db, cleaned_address)
+    if cached:
+        live_evidence = cached.get("live_evidence", {})
+        return _build_wallet_live_proof_response(
+            address=live_evidence.get("address") or cleaned_address,
+            wallet=wallet,
+            live_evidence=live_evidence,
+            source="mongodb_cache",
+            cache_status="fresh_atlas_cache",
+            mongodb_proof={
+                "available": True,
+                "persisted": True,
+                "status": "cache_hit",
+                "collection": "live_evidence",
+                "document_key": f"etherscan:wallet:{normalized_address}",
+                "fetched_at": cached.get("fetched_at"),
+            },
+            live_api_called=False,
+            cache_age=cache_age_seconds(cached),
+        )
+
+    balance = fetch_etherscan_wallet_balance(cleaned_address, ETHERSCAN_API_KEY)
+    cache_status = "etherscan_live" if balance.get("available") else "etherscan_unavailable"
+    live_evidence = _build_wallet_live_evidence(
+        address=cleaned_address,
+        wallet=wallet,
+        balance=balance,
+        cache_status=cache_status,
+    )
+
+    if balance.get("available"):
+        mongodb_proof = _persist_wallet_live_proof(db, cleaned_address, live_evidence)
+    else:
+        mongodb_proof = _wallet_persistence_proof(db, cleaned_address)
+        mongodb_proof["status"] = "not_persisted_no_live_balance"
+
+    source = (
+        "etherscan_live+mongodb"
+        if balance.get("available") and mongodb_proof.get("persisted")
+        else "etherscan_live"
+        if balance.get("available")
+        else "wallet_fallback"
+        if wallet
+        else "etherscan_unavailable"
+    )
+    return _build_wallet_live_proof_response(
+        address=cleaned_address,
+        wallet=wallet,
+        live_evidence=live_evidence,
+        source=source,
+        cache_status=cache_status,
+        mongodb_proof=mongodb_proof,
+        live_api_called=bool(ETHERSCAN_API_KEY),
     )
 
 

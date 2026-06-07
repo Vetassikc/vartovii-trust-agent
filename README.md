@@ -11,7 +11,7 @@
   <a href="https://www.mongodb.com/atlas"><img src="https://img.shields.io/badge/MongoDB_Atlas-MCP_Server-47A248?logo=mongodb&logoColor=white" alt="MongoDB Atlas"></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-Protocol-FF6F00?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHRleHQgeT0iMjAiIGZvbnQtc2l6ZT0iMjAiPuKalDwvdGV4dD48L3N2Zz4=&logoColor=white" alt="MCP"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
-  <a href="#testing"><img src="https://img.shields.io/badge/Tests-61_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/Tests-63_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"></a>
 </p>
 
 ---
@@ -99,13 +99,13 @@ graph TB
 |---------|-------------|
 | 🤖 **Multi-Agent Orchestration** | 5 specialized `LlmAgent`s coordinated via Google ADK — each with its own tools, context, and domain expertise |
 | 🍃 **MongoDB Atlas + MCP** | Structured PyMongo tools handle production workflows; the optional `mongodb-mcp-server` specialist handles ad-hoc collection inspection, aggregation, and explain-plan work |
-| 📡 **Live Evidence Proof** | `/api/live-proof` fetches CoinGecko market evidence, computes a trust-score delta, and persists the proof path in MongoDB Atlas cache |
+| 📡 **Live Evidence Proof** | `/api/live-proof` fetches CoinGecko market evidence, while `/api/wallet-live-proof` fetches Etherscan ETH balance evidence and persists both proof paths in MongoDB Atlas cache |
 | 🔄 **Model Fallback** | Production uses Vertex AI Gemini 3.5 Flash GA with a 3.1 Flash-Lite cost profile and explicit 3.1 Pro preview opt-in |
 | 🧠 **Investigation Memory** | Cross-session persistence: agents save & recall past investigations via MongoDB |
 | 📋 **Full Audit Trail** | Every agent action logged for compliance — who did what, when, which model, latency |
 | 🔍 **OSINT Grounding** | Real-time web research via Google Search Grounding for entities not in database |
 | 📊 **28 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, similarity search, network risk, investigation management |
-| 🧪 **61 Automated Tests** | Architecture validation, MCP construction, live proof contract, dashboard fallback/readiness behavior, model routing, service layer coverage |
+| 🧪 **63 Automated Tests** | Architecture validation, MCP construction, live proof contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
 
 ---
 
@@ -133,7 +133,7 @@ pip install -e '.[dev]'
 
 # Configure environment
 cp .env.example .env
-# Fill in GOOGLE_API_KEY and MONGODB_CONNECTION_STRING
+# Fill in GOOGLE_API_KEY, MONGODB_CONNECTION_STRING, and optional ETHERSCAN_API_KEY
 ```
 
 ### Seed MongoDB with Demo Data
@@ -283,7 +283,7 @@ vartovii-trust-agent/
 │   └── seed_mongodb.py             # Seed MongoDB Atlas with demo data
 ├── tests/
 │   ├── test_agent.py               # 35 agent architecture & tool tests
-│   ├── test_dashboard_api.py       # 10 dashboard fallback/readiness/live-proof contract tests
+│   ├── test_dashboard_api.py       # 12 dashboard fallback/readiness/live-proof contract tests
 │   └── test_services.py            # 13 service layer tests
 ├── demo/
 │   └── run_demo.py                 # Interactive demo runner (5 scenarios)
@@ -324,9 +324,9 @@ pytest tests/ -v --tb=short
 | Test Suite | Tests | Coverage |
 |-----------|-------|----------|
 | `test_agent.py` | 38 | Agent topology, tool registration, MCP integration, fallback chains, audit model policy |
-| `test_dashboard_api.py` | 10 | Dashboard mock fallback, readiness endpoint, live proof, judge trace, health model metadata, leaderboard and entity detail contracts |
+| `test_dashboard_api.py` | 12 | Dashboard mock fallback, readiness endpoint, CoinGecko and Etherscan live proof contracts, judge trace, health model metadata, leaderboard and entity detail contracts |
 | `test_services.py` | 13 | Model runtime, routing adapter, telemetry, config validation |
-| **Total** | **61** | Architecture, tools, dashboard API, MongoDB fallback/readiness/live proof, services |
+| **Total** | **63** | Architecture, tools, dashboard API, MongoDB fallback/readiness/live proof, services |
 
 Key test categories:
 - ✅ **Agent architecture** — verifies 5-agent topology, correct tool assignment
@@ -364,6 +364,12 @@ GET /api/live-proof?slug=ethereum
 → Trust delta is computed from 24h movement
 → MongoDB Atlas caches the live evidence for audit and MCP inspection
 → Response exposes source URL, freshness, persistence status, and agent trace
+
+GET /api/wallet-live-proof
+→ Wallet proof path fetches native ETH balance from Etherscan API V2
+→ Balance evidence is normalized for judge-readable proof cards
+→ MongoDB Atlas caches the wallet evidence for audit and MCP inspection
+→ Response exposes source URL without apikey, freshness, persistence status, and agent trace
 ```
 
 ### 🔗 Blockchain Forensics

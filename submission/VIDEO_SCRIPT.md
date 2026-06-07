@@ -10,6 +10,7 @@ Target length: 2:45-3:00.
 - Use a clean browser window with three tabs ready:
   - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
   - Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
+  - Wallet proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
   - Judge trace: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
   - Repository: https://github.com/Vetassikc/vartovii-trust-agent
 
@@ -59,15 +60,15 @@ Voiceover:
 
 > MongoDB Atlas stores the entities, investigations, and audit events. The structured tools handle production scoring paths. The MongoDB MCP specialist gives the agent flexible ad-hoc access for questions that were not hard-coded in advance. That is the partner superpower: the agent can inspect the database as part of the investigation workflow.
 
-### 1:50-2:20 — Live Source Proof
+### 1:50-2:25 — Live Source Proof
 
-Scroll to the Live Proof section, then switch to `/api/live-proof?slug=ethereum`.
+Scroll to the Live Proof section, then switch to `/api/live-proof?slug=ethereum` and `/api/wallet-live-proof`.
 
 Voiceover:
 
-> The project also proves that it is not limited to static seed data. This live proof path fetches current CoinGecko market evidence, computes a trust-score delta, and stores the proof in MongoDB Atlas for audit and MCP inspection. The UI shows the source, freshness, adjusted score, and persistence status.
+> The project also proves that it is not limited to static seed data. The live proof path fetches current CoinGecko market evidence, computes a trust-score delta, and stores the proof in MongoDB Atlas. The wallet proof path fetches a live Etherscan ETH balance and persists that proof as well. The UI shows source freshness, adjusted score, wallet balance, and persistence status.
 
-### 2:20-2:40 — Judge Trace And Readiness
+### 2:25-2:42 — Judge Trace And Readiness
 
 Switch to `/api/judge-trace`, then `/api/readiness`.
 
@@ -75,7 +76,7 @@ Voiceover:
 
 > The submission also exposes live proof endpoints. The judge trace endpoint shows the route, decision, evidence, audit events, and MCP proof. The readiness endpoint shows the active model, MongoDB status, test count, Agent Engine deployment path, and MCP configuration.
 
-### 2:40-2:55 — Repository And Production Quality
+### 2:42-2:55 — Repository And Production Quality
 
 Switch to GitHub README. Briefly show README, architecture, license, and tests.
 
@@ -99,6 +100,6 @@ Voiceover:
 >
 > In the demo, I run a judge-ready Wirecard investigation. The system shows the route, the trust score, the evidence, and the final decision. It also exposes a live judge-trace endpoint so the workflow can be inspected outside the chat UI.
 >
-> I then show the live proof endpoint for Ethereum. It fetches current CoinGecko market evidence, computes a trust-score delta, and stores that proof in MongoDB Atlas. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for unexpected investigation questions.
+> I then show the live proof endpoints for Ethereum. One fetches current CoinGecko market evidence, computes a trust-score delta, and stores that proof in MongoDB Atlas. The other fetches a live Etherscan wallet balance and stores that proof too. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for unexpected investigation questions.
 >
 > Finally, the readiness endpoint proves that the system is deployed, tested, and configured with Gemini, Google ADK, MongoDB Atlas, MCP, and the Agent Engine deployment path. This is a standalone hackathon build focused on verifiable investigation.

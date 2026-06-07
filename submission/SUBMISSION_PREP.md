@@ -1,6 +1,6 @@
 # Vartovii Trust Agent Submission Prep
 
-Last verified against Devpost on 2026-06-05.
+Last verified against Devpost on 2026-06-07.
 
 ## Official Hackathon Links
 
@@ -15,6 +15,7 @@ Last verified against Devpost on 2026-06-05.
 - Public repository: https://github.com/Vetassikc/vartovii-trust-agent
 - License: MIT, visible in `LICENSE`
 - Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
+- Wallet proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
 - Judge trace proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
 - Readiness proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness
 
@@ -32,7 +33,7 @@ Last verified against Devpost on 2026-06-05.
 - [ ] MongoDB track is selected.
 - [ ] The description explicitly mentions Gemini, Google ADK, Google Cloud deployment, MongoDB Atlas, and MongoDB MCP.
 - [ ] The description presents this as a standalone contest build created for the hackathon.
-- [ ] The description includes `/api/live-proof` as live source evidence, not only static seed data.
+- [ ] The description includes `/api/live-proof` and `/api/wallet-live-proof` as live source evidence, not only static seed data.
 
 ## Judge Narrative
 
@@ -44,6 +45,7 @@ Use this hierarchy in every description and answer:
 4. MongoDB Atlas is the evidence and audit memory layer.
 5. MongoDB MCP is the flexible ad-hoc database inspection path that lets the agent answer database questions beyond hard-coded tools.
 6. `/api/live-proof` shows CoinGecko live evidence, trust delta calculation, and MongoDB Atlas cache persistence.
+7. `/api/wallet-live-proof` shows Etherscan wallet balance evidence and MongoDB Atlas cache persistence.
 7. The project is standalone, while the domain is trust intelligence for corporate and crypto diligence.
 
 ## Judging Criteria Mapping
@@ -55,6 +57,7 @@ Use this hierarchy in every description and answer:
 - MongoDB Atlas collections for companies, crypto projects, investigations, and audit events.
 - MongoDB MCP specialist for ad-hoc Atlas operations.
 - CoinGecko live evidence proof with MongoDB Atlas cache.
+- Etherscan live wallet balance proof with MongoDB Atlas cache.
 - Cloud Run hosted demo plus Agent Engine deployment path.
 - Automated tests covering agent topology, MCP setup, API readiness, model policy, and fallback behavior.
 
@@ -85,9 +88,10 @@ Use this hierarchy in every description and answer:
 3. Scroll to the judge trace and show route, score, evidence, MCP proof, and decision.
 4. Ask how MongoDB Atlas and MCP improve the workflow.
 5. Show the Live Proof section, then open `/api/live-proof?slug=ethereum`.
-6. Show `/api/judge-trace` in a browser tab to prove the UI is backed by a real endpoint.
-7. Show `/api/readiness` to prove tests, model, database, Agent Engine, and MCP status.
-8. Briefly show the repository README, license, architecture diagram, and tests.
+6. Show `/api/wallet-live-proof` to prove live Etherscan wallet balance evidence.
+7. Show `/api/judge-trace` in a browser tab to prove the UI is backed by a real endpoint.
+8. Show `/api/readiness` to prove tests, model, database, Agent Engine, and MCP status.
+9. Briefly show the repository README, license, architecture diagram, and tests.
 
 ## Final Sanity Checks Before Submission
 
@@ -106,4 +110,5 @@ curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/health
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
 curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
+curl -sS https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
 ```

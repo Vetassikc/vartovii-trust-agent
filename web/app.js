@@ -20,6 +20,7 @@
         readiness:      apiUrl('/api/readiness'),
         judgeTrace:     apiUrl('/api/judge-trace'),
         liveProof:      apiUrl('/api/live-proof?slug=ethereum'),
+        walletProof:    apiUrl('/api/wallet-live-proof'),
         chat:           apiUrl('/api/chat'),
         entityCompany:  apiUrl('/api/entity/company/'),
         entityCrypto:   apiUrl('/api/entity/crypto/'),
@@ -27,6 +28,7 @@
 
     const REFRESH_INTERVAL = 60_000; // 60 seconds
     const HEALTH_INTERVAL  = 15_000; // 15 seconds
+    const ACTIVITY_INTERVAL = 15_000; // 15 seconds
 
     // ─── Session Management ───
     function getSessionId() {
@@ -47,6 +49,9 @@
     let currentLeaderboardType = 'companies';
     let refreshCountdown = 60;
     let isChatBusy = false;
+    let latestReadiness = null;
+    let latestLiveProof = null;
+    let latestWalletProof = null;
 
     // ─── DOM References ───
     const $ = (sel) => document.querySelector(sel);
@@ -194,7 +199,7 @@
     function formatCurrency(value, digits = 2) {
         const number = Number(value);
         if (!Number.isFinite(number)) return 'not reported';
-        return `$${number.toLocaleString(undefined, {
+        return `$${number.toLocaleString('en-US', {
             minimumFractionDigits: number < 10 ? Math.min(digits, 4) : 0,
             maximumFractionDigits: number < 10 ? Math.max(digits, 4) : digits,
         })}`;
@@ -216,7 +221,300 @@
     function humanStatus(status) {
         return String(status || 'ready')
             .replace(/_/g, ' ')
-            .replace(/\b\w/g, char => char.toUpperCase());
+            .replace(/\b\w/g, char => char.toUpperCase())
+            .replace(/\bApi\b/g, 'API')
+            .replace(/\bAdk\b/g, 'ADK')
+            .replace(/\bMcp\b/g, 'MCP')
+            .replace(/\bMongodb\b/g, 'MongoDB')
+            .replace(/\bCoingecko\b/g, 'CoinGecko')
+            .replace(/\bUrl\b/g, 'URL');
+    }
+
+    function clamp(number, min, max) {
+        return Math.min(max, Math.max(min, number));
+    }
+
+    function formatCompactCurrency(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return 'not reported';
+        return `$${Intl.NumberFormat('en-US', {
+            notation: 'compact',
+            maximumFractionDigits: 1,
+        }).format(number)}`;
+    }
+
+    function formatEth(value, displayValue) {
+        if (displayValue) return `${displayValue} ETH`;
+        const number = Number(value);
+        if (!Number.isFinite(number)) return 'not available';
+        return `${number.toLocaleString('en-US', {
+            minimumFractionDigits: number < 1 ? 4 : 2,
+            maximumFractionDigits: number < 1 ? 8 : 4,
+        })} ETH`;
+    }
+
+    function shortAddress(address) {
+        const text = String(address || '');
+        if (text.length <= 14) return text || 'not reported';
+        return `${text.slice(0, 6)}...${text.slice(-6)}`;
+    }
+
+    function sourceScore(data) {
+        if (!data) return 55;
+        if (data.status === 'ready' && data.live_api_called) return 96;
+        if (data.status === 'ready') return 88;
+        return 62;
+    }
+
+    function persistenceScore(...proofs) {
+        if (proofs.some(proof => proof?.persisted)) return 92;
+        if (proofs.some(proof => proof?.available)) return 72;
+        return 58;
+    }
+
+    function renderRadarSvg(dimensions) {
+        const size = 280;
+        const center = size / 2;
+        const radius = 92;
+        const rings = [20, 40, 60, 80, 100];
+        const pointFor = (index, score) => {
+            const angle = -Math.PI / 2 + (index * Math.PI * 2) / dimensions.length;
+            const r = radius * (score / 100);
+            return {
+                x: center + Math.cos(angle) * r,
+                y: center + Math.sin(angle) * r,
+            };
+        };
+        const outerPointFor = (index) => pointFor(index, 116);
+        const polygon = dimensions
+            .map((dimension, index) => {
+                const point = pointFor(index, dimension.score);
+                return `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
+            })
+            .join(' ');
+
+        return `
+            <svg class="radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Trust dimensions radar chart">
+                ${rings.map(ring => {
+                    const ringPoints = dimensions
+                        .map((_, index) => {
+                            const point = pointFor(index, ring);
+                            return `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
+                        })
+                        .join(' ');
+                    return `<polygon class="radar-ring" points="${ringPoints}"></polygon>`;
+                }).join('')}
+                ${dimensions.map((_, index) => {
+                    const point = pointFor(index, 100);
+                    return `<line class="radar-axis" x1="${center}" y1="${center}" x2="${point.x.toFixed(1)}" y2="${point.y.toFixed(1)}"></line>`;
+                }).join('')}
+                <polygon class="radar-area" points="${polygon}"></polygon>
+                <polyline class="radar-line" points="${polygon} ${polygon.split(' ')[0]}"></polyline>
+                ${dimensions.map((dimension, index) => {
+                    const point = pointFor(index, dimension.score);
+                    const labelPoint = outerPointFor(index);
+                    return `
+                        <circle class="radar-point" cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4"></circle>
+                        <text class="radar-label" x="${labelPoint.x.toFixed(1)}" y="${labelPoint.y.toFixed(1)}" text-anchor="middle">
+                            ${escapeHtml(dimension.shortLabel)}
+                        </text>
+                    `;
+                }).join('')}
+            </svg>
+        `;
+    }
+
+    function buildTrustDimensions() {
+        const liveTrace = latestLiveProof?.agent_trace || [];
+        const walletTrace = latestWalletProof?.agent_trace || [];
+        const liveFactors = latestLiveProof?.live_evidence?.factors || [];
+        const walletFactors = latestWalletProof?.wallet_evidence?.factors || [];
+        const agentEngineLive = latestReadiness?.agent_engine?.status === 'deployed';
+        const mcpStatus = (latestReadiness?.requirements || [])
+            .find(item => item.name === 'Partner MCP server')?.status;
+
+        return [
+            {
+                label: 'Source freshness',
+                shortLabel: 'Freshness',
+                score: Math.round((sourceScore(latestLiveProof) + sourceScore(latestWalletProof)) / 2),
+            },
+            {
+                label: 'Agent routing',
+                shortLabel: 'Routing',
+                score: clamp((liveTrace.length + walletTrace.length) * 9 + (agentEngineLive ? 10 : 0), 55, 96),
+            },
+            {
+                label: 'Evidence depth',
+                shortLabel: 'Evidence',
+                score: clamp((liveFactors.length + walletFactors.length) * 10 + 28, 54, 94),
+            },
+            {
+                label: 'Atlas memory',
+                shortLabel: 'Atlas',
+                score: persistenceScore(latestLiveProof?.mongodb_proof, latestWalletProof?.mongodb_proof),
+            },
+            {
+                label: 'MCP inspectability',
+                shortLabel: 'MCP',
+                score: mcpStatus === 'configured' ? 90 : 76,
+            },
+        ];
+    }
+
+    function renderTrustRadar() {
+        const chartEl = $('#trust-radar-chart');
+        const legendEl = $('#trust-radar-legend');
+        if (!chartEl || !legendEl) return;
+
+        const dimensions = buildTrustDimensions();
+        chartEl.innerHTML = renderRadarSvg(dimensions);
+        legendEl.innerHTML = dimensions.map(dimension => `
+            <div class="trust-radar-legend__item">
+                <span>${escapeHtml(dimension.label)}</span>
+                <strong>${Math.round(dimension.score)}</strong>
+            </div>
+        `).join('');
+    }
+
+    function formatLiveFactorValue(factor, market) {
+        const label = String(factor.label || '').toLowerCase();
+
+        if (label.includes('price')) {
+            return formatCurrency(market.price_usd, 4);
+        }
+        if (label.includes('market movement')) {
+            return `${formatPercent(market.price_change_24h_pct)} in 24h`;
+        }
+        if (label.includes('freshness')) {
+            return humanStatus(factor.value || 'live evidence');
+        }
+
+        return factor.value || 'not reported';
+    }
+
+    function formatLiveFactorImpact(factor) {
+        const label = String(factor.label || '').toLowerCase();
+
+        if (label.includes('freshness')) {
+            return formatTime(factor.impact) || factor.impact || '';
+        }
+
+        return factor.impact || '';
+    }
+
+    function renderLiveSignalChart(priceChange, delta) {
+        const hasSignal = Number.isFinite(priceChange);
+        const clamped = hasSignal ? clamp(priceChange, -20, 20) : 0;
+        const marker = ((clamped + 20) / 40) * 100;
+        const signalClass = priceChange < -10
+            ? 'signal-chart--stress'
+            : priceChange > 10
+                ? 'signal-chart--positive'
+                : 'signal-chart--neutral';
+
+        return `
+            <div class="signal-chart ${signalClass}">
+                <div class="signal-chart__header">
+                    <span>24h market signal</span>
+                    <strong>${hasSignal ? formatPercent(priceChange) : 'not reported'}</strong>
+                </div>
+                <div class="signal-chart__track" style="--marker:${marker.toFixed(1)}%">
+                    <span class="signal-chart__zero"></span>
+                    <span class="signal-chart__marker"></span>
+                </div>
+                <div class="signal-chart__scale" aria-hidden="true">
+                    <span>-20%</span>
+                    <span>0</span>
+                    <span>+20%</span>
+                </div>
+                <p>Mapped into a ${delta >= 0 ? '+' : ''}${delta} trust-score delta before Atlas persistence.</p>
+            </div>
+        `;
+    }
+
+    function renderLiveLedger(data, evidence, market, freshness, persistence) {
+        const sourceState = data.live_api_called
+            ? 'live API call'
+            : freshness.cache_status || evidence.cache_status || 'cache reused';
+        const sourceTime = freshness.fetched_at || evidence.fetched_at || market.fetched_at;
+        const documentKey = persistence.document_key || `coingecko:crypto:${data.target?.slug || evidence.slug || 'ethereum'}`;
+        const ttl = Number(freshness.cache_ttl_seconds);
+
+        return `
+            <div class="source-ledger">
+                <div>
+                    <span>Provider</span>
+                    <strong>${escapeHtml(freshness.provider || market.provider || 'CoinGecko')}</strong>
+                </div>
+                <div>
+                    <span>State</span>
+                    <strong>${escapeHtml(humanStatus(sourceState))}</strong>
+                </div>
+                <div>
+                    <span>Updated</span>
+                    <strong>${escapeHtml(formatTime(sourceTime))}</strong>
+                </div>
+                <div>
+                    <span>Atlas key</span>
+                    <strong>${escapeHtml(documentKey)}</strong>
+                </div>
+                <div>
+                    <span>Cache TTL</span>
+                    <strong>${Number.isFinite(ttl) ? `${Math.round(ttl / 60)} min` : 'not reported'}</strong>
+                </div>
+                <div>
+                    <span>Persistence</span>
+                    <strong>${persistence.persisted ? 'stored' : escapeHtml(persistence.status || 'pending')}</strong>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderLivePipeline(data, evidence, persistence) {
+        const slug = data.target?.slug || evidence.slug || 'ethereum';
+        const delta = Number(evidence.live_trust_delta || 0);
+        const steps = [
+            {
+                label: 'CoinGecko',
+                detail: data.live_api_called ? 'fresh public market evidence' : 'fresh Atlas cache reused',
+                status: data.live_api_called ? 'live' : 'cache',
+            },
+            {
+                label: 'Crypto agent',
+                detail: `${evidence.base_trust_score ?? 'stored'} baseline, ${delta >= 0 ? '+' : ''}${delta} live delta`,
+                status: 'routed',
+            },
+            {
+                label: 'MongoDB Atlas',
+                detail: persistence.persisted ? `stored in ${persistence.collection}` : 'persistence pending',
+                status: persistence.persisted ? 'stored' : 'pending',
+            },
+            {
+                label: 'MCP inspect',
+                detail: persistence.document_key || `coingecko:crypto:${slug}`,
+                status: 'inspectable',
+            },
+        ];
+
+        return `
+            <div class="pipeline-title">
+                <span>Live proof pipeline</span>
+                <strong>source -> agent -> memory -> MCP</strong>
+            </div>
+            <div class="pipeline-rail">
+                ${steps.map((step, index) => `
+                    <div class="pipeline-step">
+                        <span class="pipeline-step__num">${String(index + 1).padStart(2, '0')}</span>
+                        <div>
+                            <strong>${escapeHtml(step.label)}</strong>
+                            <p>${escapeHtml(step.detail)}</p>
+                            <small>${escapeHtml(step.status)}</small>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 
     // ════════════════════════════════════════════════════════════
@@ -248,6 +546,7 @@
     async function loadReadiness() {
         try {
             const data = await apiFetch(API.readiness);
+            latestReadiness = data;
             const sourcePill = $('#data-source-pill');
             if (sourcePill && data.quality?.data_source) {
                 sourcePill.textContent = data.quality.data_source === 'mongodb'
@@ -300,6 +599,7 @@
             if ($('#proof-mcp-status') && mcpReq) $('#proof-mcp-status').textContent = humanStatus(mcpReq.status);
             if ($('#proof-gemini-status') && geminiReq) $('#proof-gemini-status').textContent = humanStatus(geminiReq.status);
             if ($('#proof-quality-status') && hostedReq) $('#proof-quality-status').textContent = humanStatus(hostedReq.status);
+            renderTrustRadar();
         } catch (err) {
             console.warn('Readiness load failed:', err);
         }
@@ -309,10 +609,14 @@
         const gaugeEl = $('#live-proof-gauge');
         const factorsEl = $('#live-proof-factors');
         const traceEl = $('#live-proof-trace');
+        const signalEl = $('#live-proof-signal');
+        const ledgerEl = $('#live-proof-ledger');
+        const pipelineEl = $('#live-proof-pipeline');
         if (!gaugeEl || !factorsEl || !traceEl) return;
 
         try {
             const data = await apiFetch(API.liveProof, { timeoutMs: 30_000 });
+            latestLiveProof = data;
             const evidence = data.live_evidence || {};
             const market = evidence.market || {};
             const freshness = data.source_freshness || {};
@@ -346,8 +650,14 @@
             }
             if ($('#live-proof-market-cap')) $('#live-proof-market-cap').textContent = formatCurrency(market.market_cap_usd, 0);
             if ($('#live-proof-freshness')) {
-                const cacheLabel = freshness.cache_status || evidence.cache_status || data.source || 'live evidence';
+                const cacheLabel = humanStatus(freshness.cache_status || evidence.cache_status || data.source || 'live evidence');
                 $('#live-proof-freshness').textContent = `${cacheLabel} · ${formatTime(freshness.fetched_at || evidence.fetched_at)}`;
+            }
+            if (signalEl) {
+                signalEl.innerHTML = renderLiveSignalChart(priceChange, delta);
+            }
+            if (ledgerEl) {
+                ledgerEl.innerHTML = renderLiveLedger(data, evidence, market, freshness, persistence);
             }
             if ($('#live-proof-persistence')) {
                 const state = persistence.persisted
@@ -356,29 +666,148 @@
                 $('#live-proof-persistence').textContent = state;
             }
 
-            factorsEl.innerHTML = (evidence.factors || []).map(factor => `
-                <div class="live-factor">
-                    <span>${escapeHtml(factor.label || 'Signal')}</span>
-                    <strong>${escapeHtml(factor.value || 'not reported')}</strong>
-                    <small>${escapeHtml(factor.impact || '')}</small>
+            factorsEl.innerHTML = `
+                <div class="live-panel-title">
+                    <span>Signal factors</span>
+                    <strong>${formatCompactCurrency(market.market_cap_usd)}</strong>
                 </div>
-            `).join('');
-
-            traceEl.innerHTML = (data.agent_trace || []).map(step => `
-                <div class="live-trace-step">
-                    <span>${String(step.step || '').padStart(2, '0')}</span>
-                    <div>
-                        <strong>${escapeHtml(step.agent || 'agent')}</strong>
-                        <p>${escapeHtml(step.action || '')}</p>
-                        <small>${escapeHtml(step.evidence || '')}</small>
+                ${(evidence.factors || []).map(factor => `
+                    <div class="live-factor">
+                        <span>${escapeHtml(factor.label || 'Signal')}</span>
+                        <strong>${escapeHtml(formatLiveFactorValue(factor, market))}</strong>
+                        <small>${escapeHtml(formatLiveFactorImpact(factor))}</small>
                     </div>
+                `).join('')}
+            `;
+
+            traceEl.innerHTML = `
+                <div class="live-panel-title">
+                    <span>Agent route</span>
+                    <strong>${(data.agent_trace || []).length} steps</strong>
                 </div>
-            `).join('');
+                ${(data.agent_trace || []).map(step => `
+                    <div class="live-trace-step">
+                        <span>${String(step.step || '').padStart(2, '0')}</span>
+                        <div>
+                            <strong>${escapeHtml(step.agent || 'agent')}</strong>
+                            <p>${escapeHtml(step.action || '')}</p>
+                            <small>${escapeHtml(step.evidence || '')}</small>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+
+            if (pipelineEl) {
+                pipelineEl.innerHTML = renderLivePipeline(data, evidence, persistence);
+            }
+            renderTrustRadar();
         } catch (err) {
             console.warn('Live proof load failed:', err);
             gaugeEl.innerHTML = '<p class="trace-error">Live proof could not be loaded.</p>';
             factorsEl.innerHTML = '';
             traceEl.innerHTML = '';
+            if (signalEl) signalEl.innerHTML = '';
+            if (ledgerEl) ledgerEl.innerHTML = '';
+            if (pipelineEl) pipelineEl.innerHTML = '';
+        }
+    }
+
+    async function loadWalletProof() {
+        const factorsEl = $('#wallet-proof-factors');
+        if (!factorsEl) return;
+
+        try {
+            const data = await apiFetch(API.walletProof, { timeoutMs: 30_000 });
+            latestWalletProof = data;
+            const evidence = data.wallet_evidence || {};
+            const balance = evidence.balance || {};
+            const freshness = data.source_freshness || {};
+            const persistence = data.mongodb_proof || {};
+            const statusEl = $('#wallet-proof-status');
+            const isLive = data.status === 'ready';
+
+            if (statusEl) {
+                statusEl.textContent = isLive
+                    ? 'Etherscan live'
+                    : humanStatus(data.source || 'wallet fallback');
+            }
+            if ($('#wallet-proof-label')) {
+                $('#wallet-proof-label').textContent = data.target?.label || evidence.label || 'Ethereum wallet';
+            }
+            if ($('#wallet-proof-balance')) {
+                const fallbackDisplay = data.status === 'ready'
+                    ? evidence.eth_balance_display
+                    : null;
+                $('#wallet-proof-balance').textContent = formatEth(evidence.eth_balance, fallbackDisplay);
+                $('#wallet-proof-balance').style.color = isLive ? 'var(--green)' : 'var(--gold)';
+            }
+            if ($('#wallet-proof-address')) {
+                $('#wallet-proof-address').textContent = shortAddress(data.target?.address || evidence.address);
+                $('#wallet-proof-address').title = data.target?.address || evidence.address || '';
+            }
+            if ($('#wallet-proof-freshness')) {
+                const cacheLabel = humanStatus(freshness.cache_status || evidence.cache_status || data.source || 'wallet proof');
+                $('#wallet-proof-freshness').textContent = `${cacheLabel} · ${formatTime(freshness.fetched_at || evidence.fetched_at)}`;
+            }
+            if ($('#wallet-proof-provider')) $('#wallet-proof-provider').textContent = freshness.provider || balance.provider || 'Etherscan';
+            if ($('#wallet-proof-persistence')) {
+                $('#wallet-proof-persistence').textContent = persistence.persisted
+                    ? `stored in ${persistence.collection}`
+                    : humanStatus(persistence.status || 'pending');
+            }
+
+            factorsEl.innerHTML = (evidence.factors || []).map(factor => `
+                <div class="wallet-factor">
+                    <span>${escapeHtml(factor.label || 'Signal')}</span>
+                    <strong>${escapeHtml(String(factor.value || 'not reported'))}</strong>
+                    <small>${escapeHtml(String(factor.impact || ''))}</small>
+                </div>
+            `).join('');
+
+            renderTrustRadar();
+        } catch (err) {
+            console.warn('Wallet proof load failed:', err);
+            factorsEl.innerHTML = '<p class="trace-error">Wallet proof could not be loaded.</p>';
+        }
+    }
+
+    async function loadAgentActivity() {
+        const streamEl = $('#agent-activity-stream');
+        const metaEl = $('#activity-stream-meta');
+        if (!streamEl) return;
+
+        try {
+            const data = await apiFetch(`${API.audit}?limit=8`, { timeoutMs: 15_000 });
+            const events = data.events || [];
+            if (metaEl) {
+                metaEl.textContent = `${data.source === 'mongodb' ? 'Atlas audit' : 'demo audit'} · ${events.length} events`;
+            }
+            if (!events.length) {
+                streamEl.innerHTML = '<div class="activity-empty">No agent activity yet.</div>';
+                return;
+            }
+
+            streamEl.innerHTML = events.map((event, index) => {
+                const icon = getAgentIcon(event.agent);
+                const activeClass = index === 0 ? 'activity-event--active' : '';
+                return `
+                    <div class="activity-event ${activeClass}">
+                        <span class="activity-event__icon">${escapeHtml(icon)}</span>
+                        <div>
+                            <div class="activity-event__top">
+                                <strong>${escapeHtml(event.agent || 'system')}</strong>
+                                <span>${escapeHtml(formatTime(event.timestamp))}</span>
+                            </div>
+                            <p>${escapeHtml(event.action || 'Audit event recorded')}</p>
+                            ${event.model_used ? `<small>${escapeHtml(event.model_used)}</small>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.warn('Activity stream load failed:', err);
+            if (metaEl) metaEl.textContent = 'Audit unavailable';
+            streamEl.innerHTML = '<p class="trace-error">Agent activity could not be loaded.</p>';
         }
     }
 
@@ -426,6 +855,14 @@
                 { label: `Medium (${rd.MEDIUM || 0})`, color: '#d6b56d' },
                 { label: `Low (${rd.LOW || 0})`, color: '#70b783' },
             ].map(i => `<span class="risk-legend__item"><span class="risk-legend__dot" style="background:${i.color}"></span>${i.label}</span>`).join('');
+
+            const riskSummary = $('#riskmeter-summary');
+            if (riskSummary) {
+                const criticalShare = total > 0 ? Math.round(((rd.CRITICAL || 0) / total) * 100) : 0;
+                riskSummary.textContent = total > 0
+                    ? `${total} entities · ${criticalShare}% critical`
+                    : 'coverage pending';
+            }
 
             // Risk distribution cards
             $('#risk-count-critical').textContent = rd.CRITICAL || 0;
@@ -528,8 +965,10 @@
             loadStats();
             loadInvestigations();
             loadAudit();
+            loadAgentActivity();
             loadJudgeTrace();
             loadLiveProof();
+            loadWalletProof();
         } catch (err) {
             setTypingIndicator(false);
             const message = err.name === 'AbortError'
@@ -692,7 +1131,9 @@
                 } else {
                     const parts = [];
                     if (item.symbol) parts.push(item.symbol);
-                    if (item.price_usd != null) parts.push(`$${Number(item.price_usd).toLocaleString(undefined, {maximumFractionDigits: 2})}`);
+                    if (item.price_usd != null) {
+                        parts.push(`$${Number(item.price_usd).toLocaleString('en-US', { maximumFractionDigits: 2 })}`);
+                    }
                     extra = parts.join(' · ');
                 }
 
@@ -768,7 +1209,9 @@
                 loadStats();
                 loadInvestigations();
                 loadAudit();
+                loadAgentActivity();
                 loadLiveProof();
+                loadWalletProof();
             }
             timerEl.textContent = `Auto-refresh in ${refreshCountdown}s`;
         }, 1000);
@@ -835,10 +1278,10 @@
         } else {
             detailItems = `
                 <div class="detail-item"><div class="detail-label">Symbol</div><div class="detail-value">${data.symbol || '—'}</div></div>
-                <div class="detail-item"><div class="detail-label">Price USD</div><div class="detail-value">$${Number(data.price_usd || 0).toLocaleString()}</div></div>
+                <div class="detail-item"><div class="detail-label">Price USD</div><div class="detail-value">$${Number(data.price_usd || 0).toLocaleString('en-US')}</div></div>
                 <div class="detail-item"><div class="detail-label">Trust Score</div><div class="detail-value" style="color:${color}">${score}/100</div></div>
                 <div class="detail-item"><div class="detail-label">Risk Level</div><div class="detail-value"><span class="risk-badge risk-badge--${riskCls}">${risk}</span></div></div>
-                <div class="detail-item"><div class="detail-label">Market Cap</div><div class="detail-value">$${Number(data.market_cap || 0).toLocaleString()}</div></div>
+                <div class="detail-item"><div class="detail-label">Market Cap</div><div class="detail-value">$${Number(data.market_cap || 0).toLocaleString('en-US')}</div></div>
             `;
         }
 
@@ -1012,8 +1455,11 @@ function getAgentIcon(agent) {
         loadLeaderboard();
         loadInvestigations();
         loadAudit();
+        loadAgentActivity();
         loadJudgeTrace();
         loadLiveProof();
+        loadWalletProof();
+        renderTrustRadar();
 
         // Init interactive components
         initChat();
@@ -1023,6 +1469,7 @@ function getAgentIcon(agent) {
 
         // Periodic refreshes
         setInterval(checkHealth, HEALTH_INTERVAL);
+        setInterval(loadAgentActivity, ACTIVITY_INTERVAL);
         startRefreshTimer();
     }
 
