@@ -147,23 +147,23 @@ https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
 
 ### Submitter type
 
-Individual
+Recommended selection: Individual
 
 ### Organization name
 
-N/A
+Recommended entry: N/A
 
 ### Government employee
 
-No
+Recommended selection: No, if accurate for every team member. Confirm manually before final submission.
 
 ### Submitter country of residence
 
-Switzerland
+Select your actual country of residence manually.
 
 ### Canadian province
 
-N/A
+Recommended entry: N/A, unless you or a team member resides in Canada.
 
 ### Partner track
 
@@ -171,7 +171,7 @@ MongoDB
 
 ### Is your project new or existing prior to May 5, 2026?
 
-New
+Recommended selection: New
 
 ### Open-source code repository URL
 
@@ -191,27 +191,27 @@ MongoDB Atlas, MongoDB MCP Server, Model Context Protocol, PyMongo, FastAPI, Doc
 
 ### First time using Arize tools?
 
-Yes
+Recommended selection: Yes, if accurate for the team.
 
 ### First time using Elastic tools?
 
-Yes
+Recommended selection: Yes, if accurate for the team.
 
 ### First time using Fivetran tools?
 
-Yes
+Recommended selection: Yes, if accurate for the team.
 
 ### First time using GitLab tools?
 
-Yes
+Recommended selection: Yes, if accurate for the team.
 
 ### First time using MongoDB tools?
 
-No
+Recommended selection: No, if accurate for the team.
 
 ### First time using Dynatrace tools?
 
-Yes
+Recommended selection: Yes, if accurate for the team.
 
 ## Media
 
@@ -225,4 +225,3 @@ Pending. Use an unlisted YouTube or Vimeo URL after recording the 3-minute demo.
 2. `submission/media/vartovii-live-proof.png`
 3. `submission/media/vartovii-judge-trace.png`
 4. `submission/media/vartovii-architecture.png`
-
