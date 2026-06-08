@@ -1,7 +1,7 @@
 <p align="center">
-  <h1 align="center">🛡️ Vartovii Trust Intelligence Agent</h1>
+  <h1 align="center">Vartovii Trust Intelligence Agent</h1>
   <p align="center">
-    <strong>Autonomous multi-agent trust intelligence system that detects fraud and verifies trustworthiness of companies and crypto projects — powered by Vertex AI Gemini, Google ADK, and MongoDB Atlas via MCP.</strong>
+    <strong>Evidence-backed multi-agent trust investigation system for companies, crypto projects, and wallets - powered by Vertex AI Gemini, Google ADK, MongoDB Atlas, and MongoDB MCP.</strong>
   </p>
 </p>
 
@@ -16,16 +16,37 @@
 
 ---
 
-## 🚨 Why Vartovii?
+## Judge-Ready Links
 
-**The problem is real and expensive:**
+| Surface | Link | What judges can verify |
+|---------|------|------------------------|
+| Hosted product | https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app | Live Cloud Run product UI |
+| Readiness proof | https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/readiness | Gemini model, MongoDB status, Agent Engine path, MCP setup, test count |
+| Judge trace | https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace | Agent route, evidence, decision path, audit events, MongoDB proof |
+| Live CoinGecko proof | https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum | Live market evidence plus MongoDB Atlas cache persistence |
+| Live Etherscan proof | https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof | Live ETH wallet balance proof plus MongoDB Atlas cache persistence |
+| Open-source repo | https://github.com/Vetassikc/vartovii-trust-agent | MIT license, source code, docs, tests, deploy scripts |
 
-- Manual trust verification of a single company or crypto project takes **2–4 hours** of analyst time
-- Fraud costs the global economy **$5.4 trillion annually** (Association of Certified Fraud Examiners)
-- Crypto rug pulls alone drained **$2.8B in 2025** — most victims had zero warning
-- Data is scattered across **dozens of sources**: CoinGecko, Etherscan, Glassdoor, Kununu, GitHub, on-chain data
+---
 
-**Vartovii reduces this to seconds.** A team of specialized AI agents collaborates to analyze companies and crypto projects across multiple dimensions, producing a unified Trust Score with full audit trail — all persisted in MongoDB Atlas.
+## Why Vartovii?
+
+Trust work usually fails in two ways: data is scattered, and AI answers are hard
+to verify. A user may need to check market APIs, blockchain explorers, company
+records, search results, and internal notes before making one trust decision.
+
+Vartovii is built around visible investigation, not a black-box answer. A judge
+can verify that the system:
+
+- routes work through specialist Google ADK agents;
+- uses Gemini 3.5 Flash as the active production model;
+- pulls live CoinGecko and Etherscan evidence;
+- stores investigations, audit events, and live proof in MongoDB Atlas;
+- exposes proof through readiness, judge trace, live evidence, and wallet proof endpoints;
+- uses MongoDB MCP as a flexible database inspection path beyond fixed tools.
+
+The result is an evidence-first trust console: route, score, sources,
+persistence, and decision in one inspectable workflow.
 
 ### Standalone Hackathon Context
 
@@ -100,9 +121,9 @@ graph TB
 | 🤖 **Multi-Agent Orchestration** | 5 specialized `LlmAgent`s coordinated via Google ADK — each with its own tools, context, and domain expertise |
 | 🍃 **MongoDB Atlas + MCP** | Structured PyMongo tools handle production workflows; the optional `mongodb-mcp-server` specialist handles ad-hoc collection inspection, aggregation, and explain-plan work |
 | 📡 **Live Evidence Proof** | `/api/live-proof` fetches CoinGecko market evidence, while `/api/wallet-live-proof` fetches Etherscan ETH balance evidence and persists both proof paths in MongoDB Atlas cache |
-| 🔄 **Model Fallback** | Production uses Vertex AI Gemini 3.5 Flash GA with a 3.1 Flash-Lite cost profile and explicit 3.1 Pro preview opt-in |
+| 🔄 **Model Fallback** | Production uses Vertex AI Gemini 3.5 Flash with a 3.1 Flash-Lite cost profile and explicit 3.1 Pro preview opt-in |
 | 🧠 **Investigation Memory** | Cross-session persistence: agents save & recall past investigations via MongoDB |
-| 📋 **Full Audit Trail** | Every agent action logged for compliance — who did what, when, which model, latency |
+| 📋 **Audit Events** | Investigation and proof actions are recorded with agent, action, model, latency, and timestamp metadata |
 | 🔍 **OSINT Grounding** | Real-time web research via Google Search Grounding for entities not in database |
 | 📊 **28 Specialized Tools** | Corporate analytics, crypto forensics, wallet checks, on-chain analysis, similarity search, network risk, investigation management |
 | 🧪 **63 Automated Tests** | Architecture validation, MCP construction, live proof contracts, dashboard fallback/readiness behavior, model routing, service layer coverage |
@@ -271,7 +292,7 @@ vartovii-trust-agent/
 │       ├── crypto_tools.py         # 6 crypto forensics tools
 │       ├── investigation_tools.py  # 4 investigation & audit tools
 │       ├── db.py                   # MongoDB connection manager (singleton)
-│       ├── live_data.py            # CoinGecko live evidence helpers
+│       ├── live_data.py            # CoinGecko and Etherscan live evidence helpers
 │       └── mock_data.py            # Fallback demo data providers
 ├── services/                       # Service layer
 │   ├── model_runtime.py            # Model execution with fallback chain
@@ -282,7 +303,7 @@ vartovii-trust-agent/
 │   ├── deploy_agent_engine.sh      # ADK Agent Engine deploy
 │   └── seed_mongodb.py             # Seed MongoDB Atlas with demo data
 ├── tests/
-│   ├── test_agent.py               # 35 agent architecture & tool tests
+│   ├── test_agent.py               # 38 agent architecture & tool tests
 │   ├── test_dashboard_api.py       # 12 dashboard fallback/readiness/live-proof contract tests
 │   └── test_services.py            # 13 service layer tests
 ├── demo/
@@ -332,7 +353,7 @@ Key test categories:
 - ✅ **Agent architecture** — verifies 5-agent topology, correct tool assignment
 - ✅ **Tool contracts** — validates custom tools and dashboard API contracts return expected schemas
 - ✅ **MongoDB integration** — connection manager, collection access, graceful fallback
-- ✅ **Model fallback chain** — 3-tier cascade, profile switching
+- ✅ **Model routing** — profile switching and resilient fallback chains
 - ✅ **MCP toolset** — initialization, error handling, connection params
 
 ---
@@ -377,7 +398,7 @@ GET /api/wallet-live-proof
 > "Check wallet 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 → Orchestrator → Crypto Agent
 → check_wallet("0xd8dA...") → get_transaction_history("0xd8dA...")
-→ Balance: 1,247 ETH | Recent transactions | Risk flags
+→ Live balance from Etherscan when configured | Recent transactions | Risk flags
 ```
 
 ### 📋 Investigation History
@@ -392,10 +413,10 @@ GET /api/wallet-live-proof
 
 ## 📐 Model Configuration
 
-### 3-Tier Fallback Chain
+### Runtime Fallback Chain
 
 ```
-Primary (Gemini 3.5 Flash)  ──on error──▶  Ultimate (Gemini 2.0 Flash)
+Primary task model  ──on error──▶  Task fallback when different  ──on error──▶  Ultimate fallback
 ```
 
 | Profile | Agent Model | Chat Model | Report Model |
@@ -404,7 +425,10 @@ Primary (Gemini 3.5 Flash)  ──on error──▶  Ultimate (Gemini 2.0 Flash)
 | **cost** | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` | `gemini-3.1-flash-lite` |
 | **preview** | `gemini-3.5-flash` | `gemini-3.5-flash` | `gemini-3.1-pro-preview` |
 
-All models are environment-overridable. The 3-tier fallback ensures **zero user-visible failures**.
+All models are environment-overridable. The resolved chain deduplicates repeated
+model names, so stable chat and agent paths currently resolve to
+`gemini-3.5-flash` -> `gemini-2.0-flash`. The fallback policy reduces
+user-visible model failures without hiding routing metadata.
 
 ---
 

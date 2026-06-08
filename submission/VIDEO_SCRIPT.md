@@ -1,105 +1,105 @@
-# 3-Minute Demo Video Script
+# 3-хвилинний сценарій демо-відео
 
-Target length: 2:45-3:00.
+Цільова тривалість: 2:45-3:00.
 
-## Recording Setup
+## Підготовка до запису
 
-- Use English voiceover or English subtitles.
-- Record the live hosted project, not only local files.
-- Keep browser zoom at 100%.
-- Use a clean browser window with three tabs ready:
+- Використай англійську озвучку або англійські субтитри.
+- Записуй live hosted project, а не тільки локальні файли.
+- Тримай browser zoom на 100%.
+- Відкрий чисте browser window і підготуй вкладки:
   - Hosted project: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app
   - Live proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/live-proof?slug=ethereum
   - Wallet proof: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/wallet-live-proof
   - Judge trace: https://vartovii-trust-agent-n7kszqvpoq-ew.a.run.app/api/judge-trace
   - Repository: https://github.com/Vetassikc/vartovii-trust-agent
 
-## Shot List
+## План кадрів
 
-### 0:00-0:15 — Problem And Hook
+### 0:00-0:15 — Проблема і hook
 
-Show the hero/status area.
+Покажи hero/status area.
 
-Voiceover:
+Текст озвучки англійською:
 
-> Trust investigations are still too slow and too fragmented. If I want to know whether a company, employer, token, or wallet can be trusted, I need to manually connect signals across databases, search, reviews, and risk reports. Vartovii turns that into a judge-verifiable agent workflow.
+> Trust checks are still slow. People open many tools, copy data by hand, and still cannot see why a decision is right. Vartovii changes this into one agent workflow with proof that judges can inspect.
 
-### 0:15-0:40 — What The Agent Is
+### 0:15-0:40 — Що це за agent
 
-Show the main UI, live status, model/data/MCP indicators.
+Покажи main UI, live status, model/data/MCP indicators.
 
-Voiceover:
+Текст озвучки англійською:
 
-> This is Vartovii Trust Intelligence Agent. It is not a generic chatbot. It is a Google ADK multi-agent system powered by Gemini, with MongoDB Atlas as the evidence and memory layer, and MongoDB MCP as the flexible database inspection path.
+> This is Vartovii Trust Intelligence Agent. It is not just a chat screen. It is a Google ADK multi-agent system powered by Gemini. MongoDB Atlas is the memory and evidence layer. MongoDB MCP gives the agent a flexible way to inspect data.
 
-### 0:40-1:15 — Run The Judge Path
+### 0:40-1:15 — Запуск judge path
 
-Click or type:
-
-```text
-Run a judge-ready investigation for Wirecard. Show the agent route, trust score, evidence, and final decision.
-```
-
-Show the response and scroll to the judge trace section.
-
-Voiceover:
-
-> The orchestrator routes the request through specialized agents. Corporate and risk tools inspect structured evidence, the memory agent persists the investigation, and the UI exposes the route, score, evidence, and final decision. This is important because judges do not need to trust a black-box answer; they can inspect the proof path.
-
-### 1:15-1:50 — MongoDB Atlas And MCP Value
-
-Click or type:
+Натисни або введи:
 
 ```text
-Explain how MongoDB Atlas and MCP improve this trust investigation workflow.
+Run a judge-ready Wirecard investigation. Show route, score, evidence, and decision.
 ```
 
-Show the MCP proof section.
+Покажи response і проскроль до judge trace section.
 
-Voiceover:
+Текст озвучки англійською:
 
-> MongoDB Atlas stores the entities, investigations, and audit events. The structured tools handle production scoring paths. The MongoDB MCP specialist gives the agent flexible ad-hoc access for questions that were not hard-coded in advance. That is the partner superpower: the agent can inspect the database as part of the investigation workflow.
+> The main agent sends the request to specialist agents. They check company evidence, risk signals, and memory. Then the system saves the result. The UI shows the route, the score, the evidence, and the final decision. A judge can see why the answer was made.
 
-### 1:50-2:25 — Live Source Proof
+### 1:15-1:50 — Цінність MongoDB Atlas і MCP
 
-Scroll to the Live Proof section, then switch to `/api/live-proof?slug=ethereum` and `/api/wallet-live-proof`.
+Натисни або введи:
 
-Voiceover:
+```text
+Explain how MongoDB Atlas and MCP improve this workflow.
+```
 
-> The project also proves that it is not limited to static seed data. The live proof path fetches current CoinGecko market evidence, computes a trust-score delta, and stores the proof in MongoDB Atlas. The wallet proof path fetches a live Etherscan ETH balance and persists that proof as well. The UI shows source freshness, adjusted score, wallet balance, and persistence status.
+Покажи MCP proof section.
 
-### 2:25-2:42 — Judge Trace And Readiness
+Текст озвучки англійською:
 
-Switch to `/api/judge-trace`, then `/api/readiness`.
+> MongoDB Atlas stores companies, crypto projects, wallets, investigations, and audit events. This makes the product more than a one-time answer. MongoDB MCP adds a flexible database specialist. So the agent can answer new questions without us hard-coding every path.
 
-Voiceover:
+### 1:50-2:25 — Live source proof
 
-> The submission also exposes live proof endpoints. The judge trace endpoint shows the route, decision, evidence, audit events, and MCP proof. The readiness endpoint shows the active model, MongoDB status, test count, Agent Engine deployment path, and MCP configuration.
+Проскроль до Live Proof section, потім перемкнись на `/api/live-proof?slug=ethereum` і `/api/wallet-live-proof`.
 
-### 2:42-2:55 — Repository And Production Quality
+Текст озвучки англійською:
 
-Switch to GitHub README. Briefly show README, architecture, license, and tests.
+> This is the live proof. Vartovii is not only seed data. CoinGecko gives current market data. Etherscan gives a real wallet balance. Both proofs are saved in MongoDB Atlas. The UI shows freshness, score, wallet balance, and storage status.
 
-Voiceover:
+### 2:25-2:42 — Judge trace і readiness
 
-> The repository is public, licensed, and includes architecture docs, model policy, source freshness policy, agent role mapping, deployment scripts, and automated tests. The goal was to make the project read like a production trust system, not a disposable demo.
+Перемкнись на `/api/judge-trace`, потім на `/api/readiness`.
 
-### 2:55-3:00 — Close
+Текст озвучки англійською:
 
-Return to the UI standalone context section or footer.
+> The project also has proof endpoints for judges. Judge trace shows the route, decision, evidence, audit events, and MCP proof. Readiness shows the active model, MongoDB status, test count, Agent Engine path, and MCP setup. This makes the demo easy to verify.
 
-Voiceover:
+### 2:42-2:55 — Repository і production quality
 
-> The result is a standalone contest build for evidence-first trust investigation: live source proof, MongoDB memory, MCP inspection, and a judge-ready decision layer.
+Перемкнись на GitHub README. Коротко покажи README, architecture, license і tests.
 
-## Backup One-Take Script
+Текст озвучки англійською:
 
-> Vartovii Trust Intelligence Agent helps users investigate whether a company or crypto project can be trusted. It is built with Google ADK, Gemini, MongoDB Atlas, and MongoDB MCP.
+> The repository is public and has an open source license. It includes architecture notes, model policy, source freshness policy, agent roles, deploy scripts, and tests. The goal was to build a real trust system, not a throwaway demo.
+
+### 2:55-3:00 — Закриття
+
+Повернись до UI standalone context section або footer.
+
+Текст озвучки англійською:
+
+> The result is an evidence-first trust agent. It has live proof, MongoDB memory, MCP inspection, and a decision flow that judges can verify.
+
+## Резервний сценарій одним дублем
+
+> Vartovii Trust Intelligence Agent helps users check if a company or crypto project can be trusted. It is built with Google ADK, Gemini, MongoDB Atlas, and MongoDB MCP.
 >
-> The key idea is simple: do not just ask a chatbot for an opinion. Run a real investigation. The root orchestrator delegates work to specialized agents for corporate research, crypto risk, OSINT, memory, and database inspection. MongoDB Atlas stores the evidence and audit trail. MongoDB MCP gives the agent flexible ad-hoc database access beyond fixed tools.
+> The key idea is simple: do not just ask a chatbot for an opinion. Run a real investigation. The main agent sends work to specialist agents for company checks, crypto risk, OSINT, memory, and database inspection. MongoDB Atlas stores the evidence and audit trail. MongoDB MCP gives the agent flexible database access beyond fixed tools.
 >
-> In the demo, I run a judge-ready Wirecard investigation. The system shows the route, the trust score, the evidence, and the final decision. It also exposes a live judge-trace endpoint so the workflow can be inspected outside the chat UI.
+> In the demo, I run a judge-ready Wirecard investigation. The system shows the route, the trust score, the evidence, and the final decision. It also has a live judge trace endpoint, so the workflow can be checked outside the chat UI.
 >
-> I then show the live proof endpoints for Ethereum. One fetches current CoinGecko market evidence, computes a trust-score delta, and stores that proof in MongoDB Atlas. The other fetches a live Etherscan wallet balance and stores that proof too. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for unexpected investigation questions.
+> I then show the live proof endpoints for Ethereum. One endpoint gets current CoinGecko market data, updates the trust score if needed, and stores the proof in MongoDB Atlas. The other endpoint gets a live Etherscan wallet balance and stores that proof too. Atlas gives us durable memory and structured evidence. MCP gives the agent a flexible database specialist for new investigation questions.
 >
-> Finally, the readiness endpoint proves that the system is deployed, tested, and configured with Gemini, Google ADK, MongoDB Atlas, MCP, and the Agent Engine deployment path. This is a standalone hackathon build focused on verifiable investigation.
+> Finally, the readiness endpoint shows that the system is deployed, tested, and configured with Gemini, Google ADK, MongoDB Atlas, MCP, and the Agent Engine path. This is a standalone hackathon build focused on verifiable investigation.
