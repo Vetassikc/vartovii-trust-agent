@@ -52,6 +52,8 @@
     let latestReadiness = null;
     let latestLiveProof = null;
     let latestWalletProof = null;
+    let typingProgressTimer = null;
+    let typingStartedAt = 0;
 
     // ─── DOM References ───
     const $ = (sel) => document.querySelector(sel);
@@ -892,7 +894,19 @@
     // ════════════════════════════════════════════════════════════
     //  3. CHAT
     // ════════════════════════════════════════════════════════════
-    function addChatMessage(role, content, agentName) {
+    const AGENT_PROGRESS_STEPS = [
+        { at: 0, label: 'Routing request', detail: 'ADK orchestrator selects specialist path' },
+        { at: 1400, label: 'Checking memory', detail: 'MongoDB-backed investigation context' },
+        { at: 3200, label: 'Calling specialist tools', detail: 'Corporate, risk, OSINT, or crypto tools' },
+        { at: 5600, label: 'Verifying evidence', detail: 'Source freshness and audit trail' },
+        { at: 8500, label: 'Preparing decision', detail: 'Score, evidence, and judge-readable answer' },
+    ];
+
+    function prefersReducedMotion() {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function addChatMessage(role, content, agentName, options = {}) {
         const messagesEl = $('#chat-messages');
         // Remove welcome card if present
         const welcome = messagesEl.querySelector('.chat-welcome');
@@ -916,15 +930,26 @@
         }
 
         const bodyDiv = document.createElement('div');
-        bodyDiv.innerHTML = role === 'agent' ? renderMarkdown(content) : escapeHtml(content);
+        bodyDiv.className = 'chat-msg__content';
+        if (role === 'agent') {
+            if (options.reveal) {
+                bodyDiv.setAttribute('aria-live', 'polite');
+            } else {
+                bodyDiv.innerHTML = renderMarkdown(content);
+            }
+        } else {
+            bodyDiv.innerHTML = escapeHtml(content);
+        }
         bubble.appendChild(bodyDiv);
 
         msg.appendChild(avatar);
         msg.appendChild(bubble);
         messagesEl.appendChild(msg);
 
-        // Scroll to bottom
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        if (role === 'agent' && options.reveal) {
+            revealAgentMessage(bodyDiv, content, messagesEl);
+        }
     }
 
     function escapeHtml(text) {
@@ -933,12 +958,102 @@
         return div.innerHTML;
     }
 
+    function stopTypingProgress() {
+        if (typingProgressTimer) {
+            clearInterval(typingProgressTimer);
+            typingProgressTimer = null;
+        }
+    }
+
+    function renderTypingProgress() {
+        const stepsEl = $('#typing-progress');
+        if (!stepsEl) return;
+        const elapsed = performance.now() - typingStartedAt;
+        stepsEl.innerHTML = AGENT_PROGRESS_STEPS.map((step, index) => {
+            const isLast = index === AGENT_PROGRESS_STEPS.length - 1;
+            const isDone = elapsed >= step.at + 1100 && !isLast;
+            const isActive = elapsed >= step.at && !isDone;
+            const state = isDone ? 'done' : isActive ? 'active' : 'pending';
+            const marker = isDone ? '✓' : index + 1;
+            return `
+                <div class="typing-progress__step typing-progress__step--${state}">
+                    <span class="typing-progress__marker" aria-hidden="true">${marker}</span>
+                    <span>
+                        <strong>${escapeHtml(step.label)}</strong>
+                        <small>${escapeHtml(step.detail)}</small>
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+
     function setTypingIndicator(visible) {
         const el = $('#typing-indicator');
         el.hidden = !visible;
+        stopTypingProgress();
         if (visible) {
+            typingStartedAt = performance.now();
+            renderTypingProgress();
+            typingProgressTimer = setInterval(renderTypingProgress, 500);
             $('#chat-messages').scrollTop = $('#chat-messages').scrollHeight;
         }
+    }
+
+    function splitRevealChunks(text) {
+        const lines = String(text || '').split(/\n/);
+        const chunks = [];
+        let current = [];
+
+        lines.forEach((line) => {
+            if (!line.trim()) {
+                if (current.length) {
+                    chunks.push(current.join('\n'));
+                    current = [];
+                }
+                return;
+            }
+            current.push(line);
+            if (/^(#{1,4}\s|[-*]\s|\d+\.\s|---)/.test(line.trim())) {
+                chunks.push(current.join('\n'));
+                current = [];
+            }
+        });
+        if (current.length) chunks.push(current.join('\n'));
+
+        if (chunks.length <= 1) {
+            const sentences = String(text || '').match(/[^.!?]+[.!?]+|\S.+$/g);
+            return sentences && sentences.length > 1 ? sentences : [String(text || '')];
+        }
+        return chunks;
+    }
+
+    function revealAgentMessage(bodyDiv, content, messagesEl) {
+        const text = String(content || '');
+        if (prefersReducedMotion() || text.length < 240) {
+            bodyDiv.innerHTML = renderMarkdown(text);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return;
+        }
+
+        const chunks = splitRevealChunks(text);
+        let visible = '';
+        let index = 0;
+        bodyDiv.classList.add('chat-msg__content--revealing');
+
+        function tick() {
+            visible = visible ? `${visible}\n\n${chunks[index]}` : chunks[index];
+            bodyDiv.innerHTML = renderMarkdown(visible);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            index += 1;
+            if (index < chunks.length) {
+                const delay = Math.min(220, Math.max(55, chunks[index - 1].length * 0.55));
+                setTimeout(tick, delay);
+            } else {
+                bodyDiv.classList.remove('chat-msg__content--revealing');
+                bodyDiv.classList.add('chat-msg__content--revealed');
+            }
+        }
+        tick();
     }
 
     async function sendChatMessage(text) {
@@ -961,7 +1076,7 @@
                 timeoutMs: 90_000,
             });
             setTypingIndicator(false);
-            addChatMessage('agent', data.response || 'No response received.', data.agent);
+            addChatMessage('agent', data.response || 'No response received.', data.agent, { reveal: true });
             loadStats();
             loadInvestigations();
             loadAudit();

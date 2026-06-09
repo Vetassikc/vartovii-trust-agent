@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260609-chat-progress">
 </head>
 <body>
 
@@ -500,10 +500,15 @@
                     <!-- Typing indicator -->
                     <div class="typing-indicator" id="typing-indicator" hidden>
                         <div class="typing-indicator__avatar">AI</div>
-                        <div class="typing-indicator__dots">
-                            <span></span><span></span><span></span>
+                        <div class="typing-indicator__body">
+                            <div class="typing-indicator__headline">
+                                <div class="typing-indicator__dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                                <span class="typing-indicator__text">Agent investigation running...</span>
+                            </div>
+                            <div class="typing-progress" id="typing-progress" aria-live="polite"></div>
                         </div>
-                        <span class="typing-indicator__text">Agent is thinking…</span>
                     </div>
 
                     <!-- Quick action buttons -->
@@ -959,6 +964,6 @@
         </div>
     </dialog>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20260609-chat-progress"></script>
 </body>
 </html>

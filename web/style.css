@@ -1665,14 +1665,41 @@ body {
 /* Typing indicator */
 .typing-indicator {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0 1.5rem 0.5rem;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0 1.5rem 0.75rem;
     font-size: 0.75rem;
     color: var(--text-muted);
 }
+.typing-indicator[hidden] {
+    display: none;
+}
 .typing-indicator__avatar {
-    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(126,205,195,0.22);
+    border-radius: 8px;
+    background: rgba(126,205,195,0.08);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+.typing-indicator__body {
+    width: min(620px, 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.035);
+    padding: 0.7rem 0.8rem;
+}
+.typing-indicator__headline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 .typing-indicator__dots {
     display: flex; gap: 3px;
@@ -1689,6 +1716,88 @@ body {
     font-family: var(--font-mono);
     font-size: 0.68rem;
     color: var(--text-muted);
+}
+.typing-progress {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+}
+.typing-progress__step {
+    min-width: 0;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    background: rgba(8,13,18,0.34);
+    padding: 0.48rem 0.52rem;
+    transition: border-color 0.24s ease, background 0.24s ease, opacity 0.24s ease;
+}
+.typing-progress__marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.1rem;
+    margin-bottom: 0.28rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.52rem;
+    line-height: 1;
+}
+.typing-progress__step strong,
+.typing-progress__step small {
+    display: block;
+    overflow-wrap: anywhere;
+}
+.typing-progress__step strong {
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    line-height: 1.25;
+}
+.typing-progress__step small {
+    margin-top: 0.12rem;
+    color: var(--text-muted);
+    font-size: 0.56rem;
+    line-height: 1.25;
+}
+.typing-progress__step--active {
+    border-color: rgba(214,181,109,0.34);
+    background: linear-gradient(135deg, rgba(214,181,109,0.12), rgba(126,205,195,0.05));
+    box-shadow: 0 0 20px rgba(214,181,109,0.08);
+}
+.typing-progress__step--active .typing-progress__marker {
+    border-color: rgba(214,181,109,0.42);
+    color: var(--gold);
+}
+.typing-progress__step--active strong {
+    color: var(--gold);
+}
+.typing-progress__step--done {
+    border-color: rgba(126,205,195,0.2);
+    background: rgba(126,205,195,0.06);
+}
+.typing-progress__step--done .typing-progress__marker {
+    border-color: rgba(126,205,195,0.28);
+    color: var(--cyan);
+}
+.typing-progress__step--done strong {
+    color: var(--cyan);
+}
+.chat-msg__content--revealing::after {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 1em;
+    margin-left: 0.2rem;
+    vertical-align: -0.12em;
+    border-radius: 2px;
+    background: var(--gold);
+    animation: cursor-blink 0.9s steps(2, start) infinite;
+}
+@keyframes cursor-blink {
+    0%, 45% { opacity: 1; }
+    46%, 100% { opacity: 0; }
 }
 
 /* Quick action buttons */
@@ -2846,6 +2955,9 @@ body {
     .chat-panel {
         height: 500px;
     }
+    .typing-progress {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
     .chat-quick-actions {
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -2916,6 +3028,9 @@ body {
     }
     .trust-radar-chart {
         min-height: 250px;
+    }
+    .typing-progress {
+        grid-template-columns: 1fr;
     }
     .radar-label {
         font-size: 8px;
