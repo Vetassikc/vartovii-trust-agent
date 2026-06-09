@@ -8,6 +8,10 @@ architecture decisions for this hackathon repository.
 import pytest
 
 from agent.config import AIConfig
+from agent.prompts.adk import (
+    CORPORATE_AGENT_INSTRUCTION,
+    ORCHESTRATOR_AGENT_INSTRUCTION,
+)
 from agent.adk_agent import (
     root_agent,
     corporate_agent,
@@ -160,6 +164,19 @@ class TestADKInstructionOverride:
             "orchestrator",
         }
         assert set(AIConfig.ADK_INSTRUCTION_ENV_KEYS.keys()) == expected
+
+
+class TestJudgeReadyPromptQuality:
+    """Verify the submission demo prompt asks for a report, not a summary."""
+
+    def test_corporate_instruction_requires_judge_ready_report(self):
+        assert "Judge-ready investigation format" in CORPORATE_AGENT_INSTRUCTION
+        assert "do not answer with a short summary" in CORPORATE_AGENT_INSTRUCTION
+        assert "Final decision and next action" in CORPORATE_AGENT_INSTRUCTION
+
+    def test_orchestrator_preserves_judge_ready_depth(self):
+        assert "judge-ready investigation" in ORCHESTRATOR_AGENT_INSTRUCTION
+        assert "structured report rather than a short summary" in ORCHESTRATOR_AGENT_INSTRUCTION
 
 
 class TestAuditModelPolicy:

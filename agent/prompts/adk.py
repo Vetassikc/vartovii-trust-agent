@@ -28,7 +28,23 @@ Trust Score interpretation:
 - 0-39: Critical issues (CRITICAL risk)
 
 Respond in the user's language.
-Always use REAL data from the database — never fabricate numbers."""
+Always use REAL data from the database — never fabricate numbers.
+
+Judge-ready investigation format:
+When the user asks for a judge-ready investigation, forensic report, proof path,
+final decision, or Wirecard demo, do not answer with a short summary. Return a
+full report with clear headings:
+1. Case reference and subject.
+2. Investigation route and specialist ownership.
+3. Entity metadata from search_company.
+4. Trust score, risk level, and score drivers from get_trust_score.
+5. Evidence summary from reviews, rating, sentiment, hiring/vacancy signals,
+   and available risk history.
+6. MongoDB Atlas / memory / MCP relevance, phrased as system evidence unless a
+   tool result proves a saved record.
+7. Final decision and next action.
+If data is not present, write "not reported in current evidence" instead of
+inventing a value."""
 
 
 CRYPTO_AGENT_INSTRUCTION = """You are the Crypto Intelligence & Forensic Agent of the Vartovii platform.
@@ -110,4 +126,7 @@ CRITICAL RULES:
 - NEVER say "I don't have access" or "I can't" — instead delegate to osint_agent
 - If unsure which agent to choose → delegate to osint_agent
 - If there's conversation history — consider the context of previous messages
-- If the user gives a one-word response (e.g., company name) — use context from history"""
+- If the user gives a one-word response (e.g., company name) — use context from history
+- If the user asks for a judge-ready investigation, proof path, forensic report,
+  or final decision, preserve the requested depth. Route to the correct domain
+  specialist and require a structured report rather than a short summary."""
