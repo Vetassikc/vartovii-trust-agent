@@ -85,7 +85,7 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
     assert result["submission"]["demo_video"] == "pending"
     assert result["agent_engine"]["status"] in {"deployed", "deployable"}
     assert "reasoningEngines" in result["agent_engine"]["resource"]
-    assert result["quality"]["test_count"] == 63
+    assert result["quality"]["test_count"] == 65
     assert {item["name"] for item in result["requirements"]} == {
         "Gemini-powered AI agent",
         "Google Cloud Agent Builder path",

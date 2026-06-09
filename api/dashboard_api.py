@@ -969,7 +969,7 @@ async def readiness_check() -> dict[str, Any]:
             },
         ],
         "quality": {
-            "test_count": 63,
+            "test_count": 65,
             "core_agents": 5,
             "custom_tools": 28,
             "data_source": "mongodb" if mongodb_connected else "mock",
