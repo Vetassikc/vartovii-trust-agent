@@ -74,6 +74,7 @@ async def test_health_check_exposes_model_metadata_without_secrets():
     assert result["model_profile"] in {"stable", "cost", "preview"}
     assert result["agent_model"].startswith("gemini-")
     assert result["chat_model"].startswith("gemini-")
+    assert result["chat_fast_path"] is True
 
 
 @pytest.mark.asyncio
@@ -85,7 +86,7 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
     assert result["submission"]["demo_video"] == "pending"
     assert result["agent_engine"]["status"] in {"deployed", "deployable"}
     assert "reasoningEngines" in result["agent_engine"]["resource"]
-    assert result["quality"]["test_count"] == 65
+    assert result["quality"]["test_count"] == 68
     assert {item["name"] for item in result["requirements"]} == {
         "Gemini-powered AI agent",
         "Google Cloud Agent Builder path",
@@ -95,6 +96,44 @@ async def test_readiness_check_exposes_hackathon_evidence_without_secrets():
         "Live wallet proof",
     }
     assert result["quality"]["live_sources"] == ["CoinGecko", "Etherscan"]
+
+
+@pytest.mark.asyncio
+async def test_agent_chat_uses_fast_path_without_runner(monkeypatch):
+    def fail_runner():
+        raise AssertionError("fast path should not initialize the ADK runner")
+
+    monkeypatch.setattr(dashboard_api, "_get_runner", fail_runner)
+
+    result = await dashboard_api.agent_chat(
+        {
+            "message": "Give a 60-second investor-style summary of why Vartovii is more than a chatbot.",
+            "session_id": "fast-path-test",
+        }
+    )
+
+    assert result["mode"] == "fast_path"
+    assert result["session_id"] == "fast-path-test"
+    assert "more than a chatbot" in result["response"]
+
+
+def test_fast_chat_response_handles_mongodb_mcp_value_prompt():
+    result = dashboard_api._get_fast_chat_response(
+        "Explain how MongoDB Atlas and MCP improve this trust investigation workflow."
+    )
+
+    assert result is not None
+    assert "MongoDB Atlas" in result
+    assert "MCP" in result
+    assert "/api/judge-trace" in result
+
+
+def test_fast_chat_response_does_not_shortcut_full_forensic_report():
+    result = dashboard_api._get_fast_chat_response(
+        "Run the full judge-ready Wirecard forensic report. Include evidence and final decision."
+    )
+
+    assert result is None
 
 
 @pytest.mark.asyncio
